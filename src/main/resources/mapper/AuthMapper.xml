@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springbootblank.auth.mapper.AuthMapper">
+
+    <insert id="insertUser" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `user` (username, password, phone, nickname, status)
+        VALUES (#{username}, #{password}, #{phone}, #{nickname}, #{status})
+    </insert>
+
+    <select id="countUserByUsername" resultType="int">
+        SELECT COUNT(*) FROM `user` WHERE username = #{username}
+    </select>
+
+    <select id="countUserByPhone" resultType="int">
+        SELECT COUNT(*) FROM `user` WHERE phone = #{phone}
+    </select>
+
+    <select id="findUserByUsername" resultType="com.example.springbootblank.auth.entity.User">
+        SELECT id, username, password, phone, nickname, avatar, status, create_time, update_time
+        FROM `user`
+        WHERE username = #{username}
+    </select>
+
+    <select id="findUserById" resultType="com.example.springbootblank.auth.entity.User">
+        SELECT id, username, password, phone, nickname, avatar, status, create_time, update_time
+        FROM `user`
+        WHERE id = #{id}
+    </select>
+
+    <select id="findEmployeeByUsernameWithRole" resultType="com.example.springbootblank.employee.entity.Employee">
+        SELECT e.id,
+               e.username,
+               e.password,
+               e.real_name,
+               e.phone,
+               e.shop_id,
+               e.role_id,
+               e.enabled,
+               e.create_time,
+               e.update_time,
+               r.role_code AS role_code
+        FROM employee e
+                 INNER JOIN role r ON e.role_id = r.id
+        WHERE e.username = #{username}
+    </select>
+
+    <select id="findEmployeeByIdWithRole" resultType="com.example.springbootblank.employee.entity.Employee">
+        SELECT e.id,
+               e.username,
+               e.password,
+               e.real_name,
+               e.phone,
+               e.shop_id,
+               e.role_id,
+               e.enabled,
+               e.create_time,
+               e.update_time,
+               r.role_code AS role_code
+        FROM employee e
+                 INNER JOIN role r ON e.role_id = r.id
+        WHERE e.id = #{id}
+    </select>
+</mapper>

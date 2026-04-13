@@ -1,0 +1,473 @@
+# 悦食汇后端接口文档（MVP）
+
+## 接口约定
+
+- Base URL: `/api`
+- 鉴权: `Authorization: Bearer <token>`
+- 请求体: `application/json`
+- 时间格式: `yyyy-MM-dd HH:mm:ss`
+- 分页参数: `page`（从 1 开始）, `pageSize`
+
+统一返回体示例:
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "data": {}
+}
+```
+
+## 1. 认证模块 Auth
+
+### 1.1 用户注册
+
+- `POST /api/auth/user/register`
+
+请求:
+
+```json
+{
+  "username": "testuser2",
+  "password": "123456",
+  "phone": "13600000001",
+  "nickname": "小明"
+}
+```
+
+返回:
+
+```json
+{
+  "code": 200,
+  "msg": "注册成功",
+  "data": {
+    "userId": 2
+  }
+}
+```
+
+### 1.2 用户登录（C端）
+
+- `POST /api/auth/user/login`
+
+请求:
+
+```json
+{
+  "username": "testuser",
+  "password": "root"
+}
+```
+
+返回:
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "data": {
+    "token": "jwt-token",
+    "userInfo": {
+      "id": 1,
+      "username": "testuser",
+      "nickname": "测试用户"
+    }
+  }
+}
+```
+
+### 1.3 员工登录（商家端）
+
+- `POST /api/auth/employee/login`
+
+请求:
+
+```json
+{
+  "username": "admin",
+  "password": "root"
+}
+```
+
+返回:
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "data": {
+    "token": "jwt-token",
+    "employeeInfo": {
+      "id": 1,
+      "username": "admin",
+      "realName": "系统管理员",
+      "roleCode": "SUPER_ADMIN"
+    }
+  }
+}
+```
+
+### 1.4 获取当前登录信息
+
+- `GET /api/auth/me`
+
+返回:
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "data": {
+    "id": 1,
+    "type": "EMPLOYEE",
+    "username": "admin",
+    "roleCode": "SUPER_ADMIN"
+  }
+}
+```
+
+## 2. 店铺模块 Shop（商家端）
+
+### 2.1 获取店铺信息
+
+- `GET /api/merchant/shop/{shopId}`
+
+### 2.2 修改店铺信息
+
+- `PUT /api/merchant/shop/{shopId}`
+
+请求:
+
+```json
+{
+  "shopName": "悦食汇总店",
+  "address": "XX大学商业街1号",
+  "phone": "13800000000",
+  "notice": "欢迎下单"
+}
+```
+
+### 2.3 切换营业状态
+
+- `PATCH /api/merchant/shop/{shopId}/business-status`
+
+请求:
+
+```json
+{
+  "businessStatus": 1
+}
+```
+
+## 3. 菜品分类模块 DishCategory（商家端）
+
+### 3.1 分类列表
+
+- `GET /api/merchant/categories?shopId=1`
+
+### 3.2 新增分类
+
+- `POST /api/merchant/categories`
+
+请求:
+
+```json
+{
+  "shopId": 1,
+  "categoryName": "套餐",
+  "sort": 4,
+  "status": 1
+}
+```
+
+### 3.3 修改分类
+
+- `PUT /api/merchant/categories/{id}`
+
+### 3.4 删除分类
+
+- `DELETE /api/merchant/categories/{id}`
+
+备注：分类下有菜品时建议禁止删除。
+
+## 4. 菜品模块 Dish（商家端 + 用户端）
+
+### 4.1 商家端分页查询菜品
+
+- `GET /api/merchant/dishes?page=1&pageSize=10&shopId=1&categoryId=&dishName=&status=`
+
+### 4.2 新增菜品
+
+- `POST /api/merchant/dishes`
+
+请求:
+
+```json
+{
+  "shopId": 1,
+  "categoryId": 1,
+  "dishName": "黑椒鸡排饭",
+  "price": 22.0,
+  "imageUrl": "",
+  "description": "新品",
+  "stock": 100,
+  "status": 1
+}
+```
+
+### 4.3 修改菜品
+
+- `PUT /api/merchant/dishes/{id}`
+
+### 4.4 删除菜品
+
+- `DELETE /api/merchant/dishes/{id}`
+
+### 4.5 菜品上下架
+
+- `PATCH /api/merchant/dishes/{id}/status`
+
+请求:
+
+```json
+{
+  "status": 0
+}
+```
+
+### 4.6 用户端菜品列表（按店铺/分类）
+
+- `GET /api/user/dishes?shopId=1&categoryId=1`
+
+备注：仅返回上架菜品，且店铺营业时可下单。
+
+## 5. 员工模块 Employee（商家端）
+
+### 5.1 员工分页列表
+
+- `GET /api/merchant/employees?page=1&pageSize=10&shopId=1&realName=&enabled=`
+
+### 5.2 新增员工
+
+- `POST /api/merchant/employees`
+
+请求:
+
+```json
+{
+  "username": "staff01",
+  "password": "123456",
+  "realName": "张三",
+  "phone": "13900000001",
+  "shopId": 1,
+  "roleId": 3,
+  "enabled": 1
+}
+```
+
+### 5.3 修改员工
+
+- `PUT /api/merchant/employees/{id}`
+
+### 5.4 删除员工
+
+- `DELETE /api/merchant/employees/{id}`
+
+### 5.5 启用/禁用员工
+
+- `PATCH /api/merchant/employees/{id}/enabled`
+
+请求:
+
+```json
+{
+  "enabled": 0
+}
+```
+
+### 5.6 查询角色列表
+
+- `GET /api/merchant/roles`
+
+## 6. 购物车模块 Cart（用户端）
+
+### 6.1 查询购物车
+
+- `GET /api/user/cart?userId=1`
+
+备注：生产实现建议从 token 取 `userId`，而不是前端传参。
+
+### 6.2 加入购物车
+
+- `POST /api/user/cart/items`
+
+请求:
+
+```json
+{
+  "dishId": 1,
+  "quantity": 2
+}
+```
+
+### 6.3 修改购物车数量
+
+- `PUT /api/user/cart/items/{id}`
+
+请求:
+
+```json
+{
+  "quantity": 3
+}
+```
+
+### 6.4 删除购物车项
+
+- `DELETE /api/user/cart/items/{id}`
+
+### 6.5 勾选/取消勾选
+
+- `PATCH /api/user/cart/items/{id}/selected`
+
+请求:
+
+```json
+{
+  "selected": 1
+}
+```
+
+### 6.6 清空购物车
+
+- `DELETE /api/user/cart/clear`
+
+## 7. 订单模块 Order（用户端 + 商家端）
+
+### 7.1 用户提交订单
+
+- `POST /api/user/orders`
+
+请求:
+
+```json
+{
+  "shopId": 1,
+  "remark": "少辣"
+}
+```
+
+说明：后端根据购物车已勾选项生成 `orders + order_item`，并清理已下单购物车项。
+
+返回:
+
+```json
+{
+  "code": 200,
+  "msg": "下单成功",
+  "data": {
+    "orderId": 1001,
+    "orderNo": "YSH202604010001",
+    "totalAmount": 36.0,
+    "status": 0
+  }
+}
+```
+
+### 7.2 用户订单列表
+
+- `GET /api/user/orders?page=1&pageSize=10&status=`
+
+### 7.3 用户订单详情
+
+- `GET /api/user/orders/{orderId}`
+
+### 7.4 取消订单（未支付可取消）
+
+- `PATCH /api/user/orders/{orderId}/cancel`
+
+### 7.5 商家端订单列表
+
+- `GET /api/merchant/orders?page=1&pageSize=10&shopId=1&status=`
+
+### 7.6 商家接单
+
+- `PATCH /api/merchant/orders/{orderId}/accept`
+
+状态：`已支付 -> 已接单`
+
+### 7.7 商家发起配送
+
+- `PATCH /api/merchant/orders/{orderId}/delivery`
+
+状态：`已接单 -> 配送中`
+
+### 7.8 商家完成订单
+
+- `PATCH /api/merchant/orders/{orderId}/finish`
+
+状态：`配送中 -> 已完成`
+
+## 8. 支付模块 Payment（用户端）
+
+### 8.1 创建支付单（模拟）
+
+- `POST /api/user/payments/create`
+
+请求:
+
+```json
+{
+  "orderId": 1001,
+  "payChannel": "MOCK"
+}
+```
+
+返回:
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "data": {
+    "paymentNo": "PAY202604010001",
+    "payAmount": 36.0,
+    "payStatus": 0
+  }
+}
+```
+
+### 8.2 支付成功回调（模拟）
+
+- `POST /api/user/payments/mock-success`
+
+请求:
+
+```json
+{
+  "paymentNo": "PAY202604010001"
+}
+```
+
+说明：更新 `payment_record.pay_status=1`，并更新 `orders.pay_status=1, status=1, pay_time=now()`。
+
+### 8.3 查询支付状态
+
+- `GET /api/user/payments/{paymentNo}/status`
+
+## 9. 状态码与业务规则建议
+
+- `200`：成功
+- `400`：参数错误
+- `401`：未登录/Token 失效
+- `403`：无权限
+- `404`：资源不存在
+- `500`：服务器错误
+
+关键业务规则：
+
+- 店铺打烊时禁止下单
+- 菜品下架或库存不足时禁止加入购物车
+- 未支付订单才能取消
+- 订单状态流转必须按顺序，不允许跳状态

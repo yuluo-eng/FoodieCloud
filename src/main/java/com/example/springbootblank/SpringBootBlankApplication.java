@@ -1,0 +1,27 @@
+package com.example.springbootblank;
+
+import com.example.springbootblank.auth.config.JwtProperties;
+import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+
+@SpringBootApplication
+@MapperScan({
+        "com.example.springbootblank.auth.mapper",
+        "com.example.springbootblank.employee.mapper",
+        "com.example.springbootblank.dish.mapper",
+        "com.example.springbootblank.cart.mapper",
+        "com.example.springbootblank.order.mapper",
+        "com.example.springbootblank.payment.mapper",
+        "com.example.springbootblank.shop.mapper",
+        "com.example.springbootblank.category.mapper"
+})
+@EnableConfigurationProperties(JwtProperties.class)
+public class SpringBootBlankApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SpringBootBlankApplication.class, args);
+    }
+
+}

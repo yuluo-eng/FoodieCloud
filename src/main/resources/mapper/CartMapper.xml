@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springbootblank.cart.mapper.CartMapper">
+
+    <select id="listCartItems" resultType="map">
+        SELECT ci.dish_id AS dishId,
+               d.dish_name AS dishName,
+               ci.unit_price AS unitPrice,
+               ci.quantity AS quantity,
+               ci.selected AS selected
+        FROM cart_item ci
+                 INNER JOIN dish d ON ci.dish_id = d.id
+        WHERE ci.user_id = #{userId}
+        ORDER BY ci.id DESC
+    </select>
+
+    <select id="findByUserAndDish" resultType="com.example.springbootblank.cart.entity.CartItem">
+        SELECT id, user_id, dish_id, quantity, unit_price, selected, create_time, update_time
+        FROM cart_item
+        WHERE user_id = #{userId}
+          AND dish_id = #{dishId}
+    </select>
+
+    <insert id="insertCartItem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO cart_item (user_id, dish_id, quantity, unit_price, selected)
+        VALUES (#{userId}, #{dishId}, #{quantity}, #{unitPrice}, #{selected})
+    </insert>
+
+    <update id="updateCartQuantity">
+        UPDATE cart_item SET quantity = #{quantity} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteByUserAndDish">
+        DELETE FROM cart_item WHERE user_id = #{userId} AND dish_id = #{dishId}
+    </delete>
+
+    <update id="updateSelectedByUserAndDish">
+        UPDATE cart_item
+        SET selected = #{selected}
+        WHERE user_id = #{userId}
+          AND dish_id = #{dishId}
+    </update>
+
+    <delete id="clearByUser">
+        DELETE FROM cart_item WHERE user_id = #{userId}
+    </delete>
+
+    <select id="listSelectedCartForOrder" resultType="map">
+        SELECT ci.dish_id AS dishId,
+               d.dish_name AS dishName,
+               ci.unit_price AS unitPrice,
+               ci.quantity AS quantity
+        FROM cart_item ci
+                 INNER JOIN dish d ON ci.dish_id = d.id
+        WHERE ci.user_id = #{userId}
+          AND ci.selected = 1
+        ORDER BY ci.id ASC
+    </select>
+
+    <delete id="clearSelectedCart">
+        DELETE FROM cart_item WHERE user_id = #{userId} AND selected = 1
+    </delete>
+
+</mapper>

@@ -1,0 +1,754 @@
+<template>
+  <div class="user-home">
+    <nav class="top-nav">
+      <div class="nav-left">
+        <h1>🍽️ 悦食汇</h1>
+      </div>
+      <div class="nav-right">
+        <button class="btn-cart" @click="showCart = true">
+          🛒 购物车 <span v-if="cartCount > 0" class="badge">{{ cartCount }}</span>
+        </button>
+        <button class="btn-logout" @click="logout">退出</button>
+      </div>
+    </nav>
+
+    <div class="user-content">
+      <div class="dishes-section">
+        <h2>菜品列表</h2>
+        <div class="section-switch">
+          <button :class="{ active: activeView === 'dishes' }" @click="activeView = 'dishes'">点餐</button>
+          <button :class="{ active: activeView === 'orders' }" @click="activeView = 'orders'">我的订单</button>
+        </div>
+
+        <UserOrdersView v-if="activeView === 'orders'" />
+
+        <template v-else>
+        <div class="category-tabs">
+          <button
+            v-for="cat in categories"
+            :key="cat.id"
+            :class="{ active: selectedCategory === cat.id }"
+            @click="selectedCategory = cat.id"
+          >
+            {{ cat.name }}
+          </button>
+        </div>
+
+        <div class="dishes-grid">
+          <div v-if="loadError" class="empty">{{ loadError }}</div>
+          <div v-else-if="filteredDishes.length === 0" class="empty">暂无菜品</div>
+          <div v-for="dish in filteredDishes" :key="dish.id" class="dish-item">
+            <div class="dish-img">
+              <img :src="displayImage(dish)" :alt="dish.dishName" @error="onImgError($event, dish)" />
+            </div>
+            <div class="dish-details">
+              <h3>{{ dish.dishName }}</h3>
+              <p class="desc">{{ dish.description }}</p>
+              <div class="dish-footer">
+                <span class="price">¥{{ dish.price.toFixed(2) }}</span>
+                <button class="btn-add" @click="addToCart(dish)">加入购物车</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        </template>
+      </div>
+    </div>
+
+    <div v-if="showCart" class="cart-modal" @click.self="showCart = false">
+      <div class="cart-panel">
+        <div class="cart-header">
+          <h2>购物车</h2>
+          <button class="close-btn" @click="showCart = false">✕</button>
+        </div>
+
+        <div v-if="cartItems.length === 0" class="cart-empty">购物车为空</div>
+        <div v-else class="cart-items">
+          <div class="cart-tools">
+            <label class="check-all">
+              <input type="checkbox" :checked="allSelected" @change="toggleAllSelected($event)" /> 全选
+            </label>
+            <button class="btn-clear" @click="clearCart">清空购物车</button>
+          </div>
+          <div v-for="item in cartItems" :key="item.dishId" class="cart-item">
+            <div class="item-info">
+              <h4>
+                <input type="checkbox" :checked="item.selected === 1" @change="toggleSelected(item.dishId, $event)" />
+                {{ item.dishName }}
+              </h4>
+              <p>¥{{ item.unitPrice.toFixed(2) }} × {{ item.quantity }}</p>
+            </div>
+            <div class="item-controls">
+              <button @click="decreaseQuantity(item.dishId)">−</button>
+              <span>{{ item.quantity }}</span>
+              <button @click="increaseQuantity(item.dishId)">+</button>
+              <button class="btn-remove" @click="removeFromCart(item.dishId)">删除</button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="cartItems.length > 0" class="cart-footer">
+          <div class="total">
+            <span>合计：</span>
+            <span class="total-price">¥{{ cartTotal.toFixed(2) }}</span>
+          </div>
+          <button class="btn-checkout" @click="checkout">去结算</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import request from '@/api/request'
+import UserOrdersView from './UserOrdersView.vue'
+import imgDefault from '@/assets/real/drink.jpg'
+import imgBeefRice from '@/assets/real/beef-rice.jpg'
+import imgChicken from '@/assets/real/chicken.jpg'
+import imgTea from '@/assets/real/tea.jpg'
+import imgNoodle from '@/assets/real/noodle.jpg'
+import imgBurger from '@/assets/real/burger.jpg'
+import imgRealDrink from '@/assets/real/drink.jpg'
+
+const router = useRouter()
+const auth = useAuthStore()
+const showCart = ref(false)
+const activeView = ref('dishes')
+const selectedCategory = ref(null)
+const dishes = ref([])
+const cartItems = ref([])
+const categories = ref([])
+const loadError = ref('')
+
+const categoryImageMap = {
+  1: imgBeefRice,
+  2: imgChicken,
+  3: imgTea,
+}
+
+const keywordImageMap = [
+  { keys: ['牛肉饭', '牛肉', '盖饭', '饭'], image: imgBeefRice },
+  { keys: ['鸡翅', '鸡排', '鸡', '炸鸡'], image: imgChicken },
+  { keys: ['面', '拉面', '拌面', '汤面'], image: imgNoodle },
+  { keys: ['汉堡', 'burger'], image: imgBurger },
+  { keys: ['红茶', '奶茶', '柠檬', '茶', '可乐', '饮料'], image: imgTea },
+  { keys: ['饮品', '果汁', '咖啡'], image: imgRealDrink },
+]
+
+const filteredDishes = computed(() => {
+  if (!selectedCategory.value) return dishes.value.filter(d => d.status === 1)
+  return dishes.value.filter(d => d.categoryId === selectedCategory.value && d.status === 1)
+})
+
+const cartCount = computed(() => {
+  return cartItems.value.reduce((sum, item) => sum + item.quantity, 0)
+})
+
+const cartTotal = computed(() => {
+  return cartItems.value
+    .filter(item => item.selected === 1)
+    .reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
+})
+
+const allSelected = computed(() => {
+  return cartItems.value.length > 0 && cartItems.value.every(item => item.selected === 1)
+})
+
+function fallbackImageByDish(dish) {
+  const name = String(dish?.dishName || '').toLowerCase()
+  const hit = keywordImageMap.find(item => item.keys.some(k => name.includes(String(k).toLowerCase())))
+  if (hit) return hit.image
+  return categoryImageMap[dish?.categoryId] || imgDefault
+}
+
+function displayImage(dish) {
+  const raw = String(dish?.imageUrl || '').trim()
+  const isTrustedUrl = raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('/uploads/') || raw.startsWith('data:image')
+  if (raw && isTrustedUrl) {
+    return raw
+  }
+  return fallbackImageByDish(dish)
+}
+
+function onImgError(event, dish) {
+  const fallback = fallbackImageByDish(dish)
+  if (event.target.src !== fallback) {
+    event.target.src = fallback
+    return
+  }
+  event.target.onerror = null
+  event.target.src = imgDefault
+}
+
+onMounted(async () => {
+  try {
+    loadError.value = ''
+    const res = await request.get('/user/dishes', {
+      params: { shopId: 1 },
+      headers: { Authorization: `Bearer ${auth.userToken}` },
+    })
+    dishes.value = res.data.data || []
+
+    const catRes = await request.get('/user/categories', {
+      params: { shopId: 1 },
+    })
+    const remoteCategories = (catRes.data.data || [])
+      .filter(c => Number(c.status) === 1)
+      .map(c => {
+        const id = Number(c.id)
+        const rawName = String(c.categoryName ?? '').trim()
+        const sort = Number(c.sort ?? 0)
+        return {
+          id,
+          name: rawName || `分类${id}`,
+          sort,
+        }
+      })
+
+    // 强制按后端 sort/id 再排序，避免返回顺序不一致导致按钮“顺序错乱”
+    categories.value = remoteCategories.sort((a, b) => {
+      const ds = a.sort - b.sort
+      return ds !== 0 ? ds : a.id - b.id
+    })
+
+    // 调试：确认前端拿到的分类字段是否是 categoryName
+    console.log(
+        '[UserHomeView] raw categories sample:',
+        (catRes.data.data || []).slice(0, 5).map(c => ({
+          id: c.id,
+          categoryName: c.categoryName,
+          sort: c.sort,
+          status: c.status,
+        }))
+    )
+
+    const validCatIdSet = new Set(categories.value.map(c => c.id))
+    const hasMatchedDish = dishes.value.some(d => validCatIdSet.has(Number(d.categoryId)))
+    if (validCatIdSet.size > 0 && hasMatchedDish) {
+      dishes.value = dishes.value.filter(d => validCatIdSet.has(Number(d.categoryId)))
+      selectedCategory.value = categories.value[0]?.id ?? null
+    } else {
+      selectedCategory.value = null
+    }
+  } catch (err) {
+    console.error('获取菜品列表失败', err)
+    loadError.value = '菜品加载失败，请检查后端接口或登录状态'
+    dishes.value = []
+    categories.value = []
+    selectedCategory.value = null
+  }
+
+  loadCart()
+})
+
+async function loadCart() {
+  try {
+    const res = await request.get('/user/cart', {
+      headers: { Authorization: `Bearer ${auth.userToken}` },
+    })
+    cartItems.value = res.data.data || []
+  } catch (err) {
+    console.error('获取购物车失败', err)
+  }
+}
+
+async function addToCart(dish) {
+  try {
+    await request.post(
+      '/user/cart',
+      { dishId: dish.id, quantity: 1 },
+      { headers: { Authorization: `Bearer ${auth.userToken}` } }
+    )
+    const existing = cartItems.value.find(item => item.dishId === dish.id)
+    if (existing) {
+      existing.quantity += 1
+    } else {
+      cartItems.value.push({
+        dishId: dish.id,
+        dishName: dish.dishName,
+        unitPrice: dish.price,
+        quantity: 1,
+        selected: 1,
+      })
+    }
+  } catch (err) {
+    console.error('加入购物车失败', err)
+  }
+}
+
+async function increaseQuantity(dishId) {
+  const item = cartItems.value.find(i => i.dishId === dishId)
+  if (item) {
+    item.quantity += 1
+    await updateCart(dishId, item.quantity)
+  }
+}
+
+async function decreaseQuantity(dishId) {
+  const item = cartItems.value.find(i => i.dishId === dishId)
+  if (item && item.quantity > 1) {
+    item.quantity -= 1
+    await updateCart(dishId, item.quantity)
+  }
+}
+
+async function removeFromCart(dishId) {
+  try {
+    await request.delete(`/user/cart/${dishId}`, {
+      headers: { Authorization: `Bearer ${auth.userToken}` },
+    })
+    cartItems.value = cartItems.value.filter(item => item.dishId !== dishId)
+  } catch (err) {
+    console.error('删除购物车项失败', err)
+  }
+}
+
+async function toggleSelected(dishId, event) {
+  const selected = event.target.checked ? 1 : 0
+  try {
+    await request.patch(
+      `/user/cart/${dishId}/selected`,
+      { selected },
+      { headers: { Authorization: `Bearer ${auth.userToken}` } }
+    )
+    cartItems.value = cartItems.value.map(item => item.dishId === dishId ? { ...item, selected } : item)
+  } catch (err) {
+    console.error('更新勾选状态失败', err)
+  }
+}
+
+async function toggleAllSelected(event) {
+  const selected = event.target.checked ? 1 : 0
+  const tasks = cartItems.value.map(item =>
+    request.patch(
+      `/user/cart/${item.dishId}/selected`,
+      { selected },
+      { headers: { Authorization: `Bearer ${auth.userToken}` } }
+    )
+  )
+  try {
+    await Promise.all(tasks)
+    cartItems.value = cartItems.value.map(item => ({ ...item, selected }))
+  } catch (err) {
+    console.error('批量更新勾选状态失败', err)
+  }
+}
+
+async function clearCart() {
+  if (!window.confirm('确认清空购物车？')) return
+  try {
+    await request.delete('/user/cart/clear', {
+      headers: { Authorization: `Bearer ${auth.userToken}` },
+    })
+    cartItems.value = []
+  } catch (err) {
+    console.error('清空购物车失败', err)
+  }
+}
+
+async function updateCart(dishId, quantity) {
+  try {
+    await request.put(
+      `/user/cart/${dishId}`,
+      { quantity },
+      { headers: { Authorization: `Bearer ${auth.userToken}` } }
+    )
+  } catch (err) {
+    console.error('更新购物车失败', err)
+  }
+}
+
+async function checkout() {
+  try {
+    const res = await request.post(
+      '/user/orders',
+      { shopId: 1, remark: '' },
+      { headers: { Authorization: `Bearer ${auth.userToken}` } }
+    )
+    alert('下单成功！订单号：' + res.data.data.orderNo)
+    cartItems.value = []
+    showCart.value = false
+  } catch (err) {
+    console.error('下单失败', err)
+    alert('下单失败，请重试')
+  }
+}
+
+function logout() {
+  auth.logoutUser()
+  router.push('/user/login')
+}
+</script>
+
+<style scoped>
+.user-home {
+  min-height: 100vh;
+  background: #f9f9f9;
+}
+
+.top-nav {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  color: white;
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.nav-left h1 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: 1px;
+}
+
+.nav-right {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.btn-cart,
+.btn-logout {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.btn-cart:hover,
+.btn-logout:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.badge {
+  background: #e74c3c;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.user-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+.dishes-section h2 {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.section-switch {
+  display: inline-flex;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 16px;
+}
+
+.section-switch button {
+  border: none;
+  background: transparent;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #475569;
+  font-weight: 600;
+}
+
+.section-switch button.active {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  color: #fff;
+}
+
+.category-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.category-tabs button {
+  padding: 10px 20px;
+  border: 2px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.category-tabs button.active {
+  border-color: #ff6b35;
+  background: #ff6b35;
+  color: white;
+}
+
+.dishes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.dish-item {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.dish-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.dish-img {
+  width: 100%;
+  height: 160px;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.dish-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  color: #999;
+  font-size: 14px;
+}
+
+.dish-details {
+  padding: 15px;
+}
+
+.dish-details h3 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.desc {
+  color: #999;
+  font-size: 12px;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.dish-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ff6b35;
+}
+
+.btn-add {
+  background: #ff6b35;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.3s;
+}
+
+.btn-add:hover {
+  background: #f7931e;
+}
+
+.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 16px;
+}
+
+.cart-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 1000;
+}
+
+.cart-panel {
+  background: white;
+  width: 100%;
+  max-width: 400px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+}
+
+.cart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.cart-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+}
+
+.cart-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 16px;
+}
+
+.cart-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+}
+
+.cart-tools {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.check-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.btn-clear {
+  border: 1px solid #fecaca;
+  background: #fff;
+  color: #ef4444;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.item-info h4 {
+  margin: 0 0 4px 0;
+  color: #333;
+  font-size: 14px;
+}
+
+.item-info p {
+  margin: 0;
+  color: #999;
+  font-size: 12px;
+}
+
+.item-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.item-controls button {
+  background: #f0f0f0;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.btn-remove {
+  background: #e74c3c;
+  color: white;
+  font-size: 11px;
+  padding: 4px 8px;
+  width: auto;
+}
+
+.cart-footer {
+  padding: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  font-size: 16px;
+  color: #333;
+}
+
+.total-price {
+  font-weight: 600;
+  color: #ff6b35;
+  font-size: 18px;
+}
+
+.btn-checkout {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: transform 0.2s;
+}
+
+.btn-checkout:hover {
+  transform: translateY(-2px);
+}
+</style>

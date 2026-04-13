@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springbootblank.dish.mapper.DishMapper">
+
+    <select id="countMerchantDishes" resultType="long">
+        SELECT COUNT(*)
+        FROM dish
+        WHERE shop_id = #{shopId}
+        <if test="categoryId != null">
+            AND category_id = #{categoryId}
+        </if>
+        <if test="dishName != null and dishName != ''">
+            AND dish_name LIKE CONCAT('%', #{dishName}, '%')
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <select id="listMerchantDishes" resultType="com.example.springbootblank.dish.entity.Dish">
+        SELECT id,
+               shop_id AS shopId,
+               category_id AS categoryId,
+               dish_name AS dishName,
+               price,
+               image_url AS imageUrl,
+               description,
+               stock,
+               status,
+               create_time AS createTime,
+               update_time AS updateTime
+        FROM dish
+        WHERE shop_id = #{shopId}
+        <if test="categoryId != null">
+            AND category_id = #{categoryId}
+        </if>
+        <if test="dishName != null and dishName != ''">
+            AND dish_name LIKE CONCAT('%', #{dishName}, '%')
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <insert id="insertDish" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO dish (shop_id, category_id, dish_name, price, image_url, description, stock, status)
+        VALUES (#{shopId}, #{categoryId}, #{dishName}, #{price}, #{imageUrl}, #{description}, #{stock}, #{status})
+    </insert>
+
+    <update id="updateDish">
+        UPDATE dish
+        SET shop_id = #{dish.shopId},
+            category_id = #{dish.categoryId},
+            dish_name = #{dish.dishName},
+            price = #{dish.price},
+            image_url = #{dish.imageUrl},
+            description = #{dish.description},
+            stock = #{dish.stock},
+            status = #{dish.status}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteDish">
+        DELETE FROM dish WHERE id = #{id}
+    </delete>
+
+    <update id="updateDishStatus">
+        UPDATE dish SET status = #{status} WHERE id = #{id}
+    </update>
+
+    <select id="listUserDishes" resultType="com.example.springbootblank.dish.entity.Dish">
+        SELECT d.id,
+               d.shop_id AS shopId,
+               d.category_id AS categoryId,
+               d.dish_name AS dishName,
+               d.price,
+               d.image_url AS imageUrl,
+               d.description,
+               d.stock,
+               d.status,
+               d.create_time AS createTime,
+               d.update_time AS updateTime
+        FROM dish d
+                 INNER JOIN merchant_shop s ON d.shop_id = s.id
+        WHERE d.shop_id = #{shopId}
+          AND d.status = 1
+          AND s.business_status = 1
+        <if test="categoryId != null">
+            AND d.category_id = #{categoryId}
+        </if>
+        ORDER BY d.id DESC
+    </select>
+
+</mapper>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springbootblank.shop.mapper.ShopMapper">
+
+    <select id="findById" resultType="com.example.springbootblank.shop.entity.Shop">
+        SELECT id, shop_name, address, phone, business_status, notice, create_time, update_time
+        FROM merchant_shop
+        WHERE id = #{id}
+    </select>
+
+    <update id="updateShop">
+        UPDATE merchant_shop
+        SET shop_name = #{shop.shopName},
+            address = #{shop.address},
+            phone = #{shop.phone},
+            notice = #{shop.notice}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateBusinessStatus">
+        UPDATE merchant_shop
+        SET business_status = #{businessStatus}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

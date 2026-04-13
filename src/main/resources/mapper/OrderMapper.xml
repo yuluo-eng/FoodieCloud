@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springbootblank.order.mapper.OrderMapper">
+
+    <insert id="insertOrder" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO orders (order_no, user_id, shop_id, total_amount, remark, status, pay_status)
+        VALUES (#{orderNo}, #{userId}, #{shopId}, #{totalAmount}, #{remark}, #{status}, #{payStatus})
+    </insert>
+
+    <insert id="insertOrderItem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO order_item (order_id, dish_id, dish_name, dish_price, quantity, amount)
+        VALUES (#{orderId}, #{dishId}, #{dishName}, #{dishPrice}, #{quantity}, #{amount})
+    </insert>
+
+    <select id="countUserOrders" resultType="long">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE user_id = #{userId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <select id="listUserOrders" resultType="com.example.springbootblank.order.entity.Order">
+        SELECT id,
+               order_no AS orderNo,
+               user_id AS userId,
+               shop_id AS shopId,
+               total_amount AS totalAmount,
+               remark,
+               status,
+               pay_status AS payStatus,
+               pay_time AS payTime,
+               finish_time AS finishTime,
+               cancel_time AS cancelTime,
+               create_time AS createTime,
+               update_time AS updateTime
+        FROM orders
+        WHERE user_id = #{userId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="findUserOrderById" resultType="com.example.springbootblank.order.entity.Order">
+        SELECT id,
+               order_no AS orderNo,
+               user_id AS userId,
+               shop_id AS shopId,
+               total_amount AS totalAmount,
+               remark,
+               status,
+               pay_status AS payStatus,
+               pay_time AS payTime,
+               finish_time AS finishTime,
+               cancel_time AS cancelTime,
+               create_time AS createTime,
+               update_time AS updateTime
+        FROM orders
+        WHERE id = #{orderId}
+          AND user_id = #{userId}
+    </select>
+
+    <select id="listOrderItems" resultType="com.example.springbootblank.order.entity.OrderItem">
+        SELECT id,
+               order_id AS orderId,
+               dish_id AS dishId,
+               dish_name AS dishName,
+               dish_price AS dishPrice,
+               quantity,
+               amount,
+               create_time AS createTime,
+               update_time AS updateTime
+        FROM order_item
+        WHERE order_id = #{orderId}
+        ORDER BY id ASC
+    </select>
+
+    <update id="updateOrderStatus">
+        UPDATE orders
+        SET status = #{toStatus}
+        WHERE id = #{id}
+          AND status = #{fromStatus}
+    </update>
+
+    <update id="updateOrderCancelByUser">
+        UPDATE orders
+        SET status = 5,
+            cancel_time = NOW()
+        WHERE id = #{id}
+          AND status = 0
+          AND pay_status = 0
+    </update>
+
+    <select id="countMerchantOrders" resultType="long">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE shop_id = #{shopId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <select id="listMerchantOrders" resultType="com.example.springbootblank.order.entity.Order">
+        SELECT id,
+               order_no AS orderNo,
+               user_id AS userId,
+               shop_id AS shopId,
+               total_amount AS totalAmount,
+               remark,
+               status,
+               pay_status AS payStatus,
+               pay_time AS payTime,
+               finish_time AS finishTime,
+               cancel_time AS cancelTime,
+               create_time AS createTime,
+               update_time AS updateTime
+        FROM orders
+        WHERE shop_id = #{shopId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="findOrderById" resultType="com.example.springbootblank.order.entity.Order">
+        SELECT id,
+               order_no AS orderNo,
+               user_id AS userId,
+               shop_id AS shopId,
+               total_amount AS totalAmount,
+               remark,
+               status,
+               pay_status AS payStatus,
+               pay_time AS payTime,
+               finish_time AS finishTime,
+               cancel_time AS cancelTime,
+               create_time AS createTime,
+               update_time AS updateTime
+        FROM orders
+        WHERE id = #{orderId}
+    </select>
+
+    <update id="updateOrderPaySuccess">
+        UPDATE orders
+        SET pay_status = 1,
+            status = 1,
+            pay_time = NOW()
+        WHERE id = #{id}
+          AND pay_status = 0
+    </update>
+
+    <select id="findOrderPayInfo" resultType="map">
+        SELECT id AS orderId,
+               order_no AS orderNo,
+               total_amount AS totalAmount,
+               pay_status AS payStatus,
+               status
+        FROM orders
+        WHERE id = #{orderId}
+    </select>
+
+    <select id="countMerchantOrdersPaidToday" resultType="long">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE shop_id = #{shopId}
+          AND pay_status = 1
+          AND pay_time >= #{startTime}
+          AND pay_time &lt; #{endTime}
+    </select>
+
+    <select id="sumMerchantRevenuePaidToday" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(total_amount), 0)
+        FROM orders
+        WHERE shop_id = #{shopId}
+          AND pay_status = 1
+          AND pay_time >= #{startTime}
+          AND pay_time &lt; #{endTime}
+    </select>
+
+</mapper>

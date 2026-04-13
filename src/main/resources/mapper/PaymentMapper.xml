@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springbootblank.payment.mapper.PaymentMapper">
+
+    <insert id="insertPayment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO payment_record (order_id, payment_no, pay_channel, pay_amount, pay_status)
+        VALUES (#{orderId}, #{paymentNo}, #{payChannel}, #{payAmount}, #{payStatus})
+    </insert>
+
+    <select id="findPaymentByNo" resultType="map">
+        SELECT p.id,
+               p.order_id AS orderId,
+               p.payment_no AS paymentNo,
+               p.pay_channel AS payChannel,
+               p.pay_amount AS payAmount,
+               p.pay_status AS payStatus,
+               p.transaction_no AS transactionNo,
+               p.paid_time AS paidTime
+        FROM payment_record p
+        WHERE p.payment_no = #{paymentNo}
+    </select>
+
+    <select id="findPaymentByNoForUser" resultType="map">
+        SELECT p.id,
+               p.order_id AS orderId,
+               p.payment_no AS paymentNo,
+               p.pay_channel AS payChannel,
+               p.pay_amount AS payAmount,
+               p.pay_status AS payStatus,
+               p.transaction_no AS transactionNo,
+               p.paid_time AS paidTime
+        FROM payment_record p
+                 INNER JOIN orders o ON p.order_id = o.id
+        WHERE p.payment_no = #{paymentNo}
+          AND o.user_id = #{userId}
+    </select>
+
+    <update id="markPaymentSuccess">
+        UPDATE payment_record
+        SET pay_status = 1,
+            paid_time = NOW(),
+            transaction_no = CONCAT('MOCK-', payment_no)
+        WHERE payment_no = #{paymentNo}
+          AND pay_status = 0
+    </update>
+
+</mapper>

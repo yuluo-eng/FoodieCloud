@@ -1,0 +1,20 @@
+<svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff7ed"/>
+      <stop offset="100%" stop-color="#ffedd5"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bg)"/>
+  <circle cx="130" cy="90" r="56" fill="#fdba74" opacity="0.3"/>
+  <circle cx="700" cy="420" r="90" fill="#fb923c" opacity="0.25"/>
+  <ellipse cx="400" cy="320" rx="235" ry="74" fill="#7c2d12" opacity="0.14"/>
+  <ellipse cx="400" cy="280" rx="210" ry="62" fill="#f59e0b"/>
+  <ellipse cx="400" cy="272" rx="188" ry="48" fill="#fef3c7"/>
+  <circle cx="325" cy="260" r="20" fill="#b91c1c"/>
+  <circle cx="370" cy="288" r="18" fill="#dc2626"/>
+  <circle cx="430" cy="250" r="17" fill="#16a34a"/>
+  <circle cx="470" cy="282" r="20" fill="#65a30d"/>
+  <text x="400" y="100" text-anchor="middle" fill="#7c2d12" font-size="44" font-weight="700" font-family="'Noto Sans SC',sans-serif">��G � �L;�</text>
+  <text x="400" y="152" text-anchor="middle" fill="#9a3412" font-size="24" font-family="'Noto Sans SC',sans-serif">����~~</text>
+</svg>

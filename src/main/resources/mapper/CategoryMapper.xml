@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springbootblank.category.mapper.CategoryMapper">
+
+    <select id="listByShopId" resultType="com.example.springbootblank.category.entity.DishCategory">
+        SELECT id, shop_id, category_name, sort, status, create_time, update_time
+        FROM dish_category
+        WHERE shop_id = #{shopId}
+        ORDER BY sort ASC, id ASC
+    </select>
+
+    <insert id="insertCategory" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO dish_category (shop_id, category_name, sort, status)
+        VALUES (#{shopId}, #{categoryName}, #{sort}, #{status})
+    </insert>
+
+    <update id="updateCategory">
+        UPDATE dish_category
+        SET shop_id = #{category.shopId},
+            category_name = #{category.categoryName},
+            sort = #{category.sort},
+            status = #{category.status}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteCategory">
+        DELETE FROM dish_category
+        WHERE id = #{id}
+    </delete>
+
+    <select id="countDishByCategory" resultType="int">
+        SELECT COUNT(*) FROM dish WHERE category_id = #{categoryId}
+    </select>
+
+</mapper>
