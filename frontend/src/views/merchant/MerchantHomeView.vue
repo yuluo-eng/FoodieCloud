@@ -9,11 +9,9 @@
         <li :class="{ active: activeTab === 'employees' }">
           <a href="#" @click.prevent="activeTab = 'employees'">👥 员工管理</a>
         </li>
-        <li :class="{ active: activeTab === 'dishes' }">
-          <a href="#" @click.prevent="activeTab = 'dishes'">🍽️ 菜品管理</a>
-        </li>
-        <li :class="{ active: activeTab === 'categories' }">
-          <a href="#" @click.prevent="activeTab = 'categories'">🧩 分类管理</a>
+        <li :class="{ active: activeTab === 'menu' }">
+          <a href="#" @click.prevent="activeTab = 'me' +
+           'nu'">🍽️ 菜单管理</a>
         </li>
         <li :class="{ active: activeTab === 'shop' }">
           <a href="#" @click.prevent="activeTab = 'shop'">🏪 店铺设置</a>
@@ -52,8 +50,7 @@
       </div>
 
       <EmployeeListView v-else-if="activeTab === 'employees'" />
-      <DishListView v-else-if="activeTab === 'dishes'" />
-      <CategoryManageView v-else-if="activeTab === 'categories'" />
+      <MerchantMenuView v-else-if="activeTab === 'menu'" />
       <ShopSettingsView v-else-if="activeTab === 'shop'" />
 
       <MerchantOrdersView v-else-if="activeTab === 'orders'" />
@@ -67,8 +64,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import request from '@/api/request'
 import EmployeeListView from './EmployeeListView.vue'
-import DishListView from './DishListView.vue'
-import CategoryManageView from './CategoryManageView.vue'
+import MerchantMenuView from './MerchantMenuView.vue'
 import ShopSettingsView from './ShopSettingsView.vue'
 import MerchantOrdersView from './MerchantOrdersView.vue'
 

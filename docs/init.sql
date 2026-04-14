@@ -246,7 +246,7 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO dish (shop_id, category_id, dish_name, price, image_url, description, stock, status)
-SELECT 1, dc.id, '招牌牛肉饭', 18.00, '', '畅销款', 100, 1
+SELECT 1, dc.id, '招牌牛肉饭', 18.00, '/dishes/beef-rice-bowl.jpg', '畅销款', 100, 1
 FROM dish_category dc
 WHERE dc.shop_id = 1
   AND dc.category_name = '主食'
@@ -255,7 +255,7 @@ WHERE dc.shop_id = 1
   );
 
 INSERT INTO dish (shop_id, category_id, dish_name, price, image_url, description, stock, status)
-SELECT 1, dc.id, '香辣鸡翅', 12.00, '', '微辣', 100, 1
+SELECT 1, dc.id, '香辣鸡翅', 12.00, '/dishes/chicken-wings.jpg', '微辣', 100, 1
 FROM dish_category dc
 WHERE dc.shop_id = 1
   AND dc.category_name = '小吃'
@@ -264,7 +264,7 @@ WHERE dc.shop_id = 1
   );
 
 INSERT INTO dish (shop_id, category_id, dish_name, price, image_url, description, stock, status)
-SELECT 1, dc.id, '柠檬红茶', 6.00, '', '解腻推荐', 100, 1
+SELECT 1, dc.id, '柠檬红茶', 6.00, '/dishes/lemon-tea.jpg', '解腻推荐', 100, 1
 FROM dish_category dc
 WHERE dc.shop_id = 1
   AND dc.category_name = '饮品'

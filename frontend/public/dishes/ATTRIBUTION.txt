@@ -1,0 +1,29 @@
+本目录图片来源计划为 Unsplash（https://unsplash.com/license）。
+按你的要求改为“非候选模式”：每个菜品只给 1 条确定链接，并尽量扩充菜品数量。
+当前仅做下载清单评审，确认后再批量下载到本目录。
+
+一、首批核心菜品（与当前页面最相关）
+- beef-rice-bowl.jpg | 招牌牛肉饭 | https://unsplash.com/photos/bowl-of-beef-and-rice-topped-with-raw-egg-WuxzPJqDygU
+- chicken-wings.jpg | 香辣鸡翅 | https://unsplash.com/photos/crispy-chicken-wings-with-dipping-sauce-and-vegetables-3chCjpTDaEM
+- lemon-tea.jpg | 柠檬红茶 | https://unsplash.com/photos/a-glass-of-ice-tea-with-a-slice-of-lemon-LQWqZVgm2gI
+- noodle.jpg | 拉面/汤面 | https://unsplash.com/photos/a-bowl-of-ramen-with-chopsticks-and-an-egg-KRYuPwvyEys
+- burger.jpg | 牛肉汉堡 | https://unsplash.com/photos/burger-with-fries-on-stainless-steel-round-plate-BDG_Uu9Dguk
+- drink.jpg | 通用冷饮 | https://unsplash.com/photos/iced-coffee-in-a-clear-plastic-cup-with-ice-8BayJLN_rUo
+
+二、扩充菜品（用于后续上新和兜底）
+- fried-rice.jpg | 炒饭/盖浇饭通用 | https://unsplash.com/photos/a-bowl-of-food-with-meat-rice-and-vegetables-NseBwyq-UOY
+- grilled-beef-rice.jpg | 烤肉饭 | https://unsplash.com/photos/bowl-of-rice-with-grilled-meat-and-fried-egg-7TARyyHQos8
+- dumplings.jpg | 饺子/煎饺 | https://unsplash.com/photos/steamed-dumplings-served-in-a-bamboo-steamer-basket-idUSfFfqLmw
+- dimsum.jpg | 点心拼盘 | https://unsplash.com/photos/a-bowl-of-dumplings-0_gUJgehkzw
+- fries.jpg | 薯条小吃 | https://unsplash.com/photos/fried-chicken-wings-with-fries-and-dipping-sauce-mslgTpf3wJ8
+- fried-chicken.jpg | 炸鸡块/炸鸡排 | https://unsplash.com/photos/fried-chicken-c6J2thg8k04
+- pizza.jpg | 披萨 | https://unsplash.com/photos/sliced-pepperoni-pizza-on-plate-KK1hlAI2lgE
+- sushi.jpg | 寿司 | https://unsplash.com/photos/a-variety-of-sushi-rolls-and-nigiri-arranged-on-platters-Avi5cKHSLw8
+- salad.jpg | 轻食沙拉 | https://unsplash.com/photos/a-colorful-salad-bowl-with-many-fresh-ingredients-_vy3L5n8VnI
+- orange-juice.jpg | 鲜榨橙汁 | https://unsplash.com/photos/a-glass-of-orange-juice-ODlrG3Rftk4
+- iced-tea.jpg | 冰茶饮品 | https://unsplash.com/photos/glass-of-iced-tea-with-lemon-and-mint-fDWtPLCPgKU
+- iced-coffee.jpg | 冰咖啡 | https://unsplash.com/photos/iced-coffee-with-cream-and-ice-in-glass-wWmQEoFK9gs
+
+备注：
+- 以上清单用于本地开发与演示，发布前请再次核对授权、商标和人物肖像风险。
+- 你确认后，我会按这个文件名和顺序直接下载落地。

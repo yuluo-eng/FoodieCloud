@@ -23,34 +23,14 @@
         <UserOrdersView v-if="activeView === 'orders'" />
 
         <template v-else>
-        <div class="category-tabs">
-          <button
-            v-for="cat in categories"
-            :key="cat.id"
-            :class="{ active: selectedCategory === cat.id }"
-            @click="selectedCategory = cat.id"
-          >
-            {{ cat.name }}
-          </button>
-        </div>
-
-        <div class="dishes-grid">
-          <div v-if="loadError" class="empty">{{ loadError }}</div>
-          <div v-else-if="filteredDishes.length === 0" class="empty">暂无菜品</div>
-          <div v-for="dish in filteredDishes" :key="dish.id" class="dish-item">
-            <div class="dish-img">
-              <img :src="displayImage(dish)" :alt="dish.dishName" @error="onImgError($event, dish)" />
-            </div>
-            <div class="dish-details">
-              <h3>{{ dish.dishName }}</h3>
-              <p class="desc">{{ dish.description }}</p>
-              <div class="dish-footer">
-                <span class="price">¥{{ dish.price.toFixed(2) }}</span>
-                <button class="btn-add" @click="addToCart(dish)">加入购物车</button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <MenuBoard
+          v-model:selected-category="selectedCategory"
+          :categories="categoryTabs"
+          :dishes="dishes"
+          :load-error="loadError"
+          mode="user"
+          @add-cart="addToCart"
+        />
         </template>
       </div>
     </div>
@@ -105,13 +85,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import request from '@/api/request'
 import UserOrdersView from './UserOrdersView.vue'
-import imgDefault from '@/assets/real/drink.jpg'
-import imgBeefRice from '@/assets/real/beef-rice.jpg'
-import imgChicken from '@/assets/real/chicken.jpg'
-import imgTea from '@/assets/real/tea.jpg'
-import imgNoodle from '@/assets/real/noodle.jpg'
-import imgBurger from '@/assets/real/burger.jpg'
-import imgRealDrink from '@/assets/real/drink.jpg'
+import MenuBoard from '@/components/menu/MenuBoard.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -123,25 +97,9 @@ const cartItems = ref([])
 const categories = ref([])
 const loadError = ref('')
 
-const categoryImageMap = {
-  1: imgBeefRice,
-  2: imgChicken,
-  3: imgTea,
-}
-
-const keywordImageMap = [
-  { keys: ['牛肉饭', '牛肉', '盖饭', '饭'], image: imgBeefRice },
-  { keys: ['鸡翅', '鸡排', '鸡', '炸鸡'], image: imgChicken },
-  { keys: ['面', '拉面', '拌面', '汤面'], image: imgNoodle },
-  { keys: ['汉堡', 'burger'], image: imgBurger },
-  { keys: ['红茶', '奶茶', '柠檬', '茶', '可乐', '饮料'], image: imgTea },
-  { keys: ['饮品', '果汁', '咖啡'], image: imgRealDrink },
-]
-
-const filteredDishes = computed(() => {
-  if (!selectedCategory.value) return dishes.value.filter(d => d.status === 1)
-  return dishes.value.filter(d => d.categoryId === selectedCategory.value && d.status === 1)
-})
+const categoryTabs = computed(() =>
+  categories.value.map((c) => ({ ...c, active: true }))
+)
 
 const cartCount = computed(() => {
   return cartItems.value.reduce((sum, item) => sum + item.quantity, 0)
@@ -156,32 +114,6 @@ const cartTotal = computed(() => {
 const allSelected = computed(() => {
   return cartItems.value.length > 0 && cartItems.value.every(item => item.selected === 1)
 })
-
-function fallbackImageByDish(dish) {
-  const name = String(dish?.dishName || '').toLowerCase()
-  const hit = keywordImageMap.find(item => item.keys.some(k => name.includes(String(k).toLowerCase())))
-  if (hit) return hit.image
-  return categoryImageMap[dish?.categoryId] || imgDefault
-}
-
-function displayImage(dish) {
-  const raw = String(dish?.imageUrl || '').trim()
-  const isTrustedUrl = raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('/uploads/') || raw.startsWith('data:image')
-  if (raw && isTrustedUrl) {
-    return raw
-  }
-  return fallbackImageByDish(dish)
-}
-
-function onImgError(event, dish) {
-  const fallback = fallbackImageByDish(dish)
-  if (event.target.src !== fallback) {
-    event.target.src = fallback
-    return
-  }
-  event.target.onerror = null
-  event.target.src = imgDefault
-}
 
 onMounted(async () => {
   try {
@@ -213,17 +145,6 @@ onMounted(async () => {
       const ds = a.sort - b.sort
       return ds !== 0 ? ds : a.id - b.id
     })
-
-    // 调试：确认前端拿到的分类字段是否是 categoryName
-    console.log(
-        '[UserHomeView] raw categories sample:',
-        (catRes.data.data || []).slice(0, 5).map(c => ({
-          id: c.id,
-          categoryName: c.categoryName,
-          sort: c.sort,
-          status: c.status,
-        }))
-    )
 
     const validCatIdSet = new Set(categories.value.map(c => c.id))
     const hasMatchedDish = dishes.value.some(d => validCatIdSet.has(Number(d.categoryId)))
@@ -472,120 +393,6 @@ function logout() {
 .section-switch button.active {
   background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
   color: #fff;
-}
-
-.category-tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 25px;
-}
-
-.category-tabs button {
-  padding: 10px 20px;
-  border: 2px solid #ddd;
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s;
-}
-
-.category-tabs button.active {
-  border-color: #ff6b35;
-  background: #ff6b35;
-  color: white;
-}
-
-.dishes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-.dish-item {
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.dish-item:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
-
-.dish-img {
-  width: 100%;
-  height: 160px;
-  background: #f5f5f5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.dish-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.placeholder {
-  color: #999;
-  font-size: 14px;
-}
-
-.dish-details {
-  padding: 15px;
-}
-
-.dish-details h3 {
-  margin: 0 0 8px 0;
-  color: #333;
-  font-size: 16px;
-}
-
-.desc {
-  color: #999;
-  font-size: 12px;
-  margin: 0 0 12px 0;
-  line-height: 1.4;
-}
-
-.dish-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.price {
-  font-size: 18px;
-  font-weight: 600;
-  color: #ff6b35;
-}
-
-.btn-add {
-  background: #ff6b35;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: background 0.3s;
-}
-
-.btn-add:hover {
-  background: #f7931e;
-}
-
-.empty {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 60px 20px;
-  color: #999;
-  font-size: 16px;
 }
 
 .cart-modal {
