@@ -23,6 +23,7 @@ async function onSubmit() {
       password: password.value,
     })
     auth.setUserToken(data.token)
+    auth.setUserFromLogin(data.userInfo)
     const redirect = route.query.redirect || '/user'
     router.replace(typeof redirect === 'string' ? redirect : '/user')
   } catch (e) {

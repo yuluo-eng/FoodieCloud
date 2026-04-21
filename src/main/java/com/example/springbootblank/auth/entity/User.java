@@ -1,5 +1,6 @@
 package com.example.springbootblank.auth.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class User {
@@ -9,6 +10,14 @@ public class User {
     private String phone;
     private String nickname;
     private String avatar;
+    /** 收货人 */
+    private String receiverName;
+    /** 收货电话 */
+    private String shippingPhone;
+    /** 收货详细地址 */
+    private String shippingAddress;
+    private BigDecimal shippingLat;
+    private BigDecimal shippingLng;
     private Integer status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
@@ -59,6 +68,46 @@ public class User {
 
     public void setAvatar(String avatar) {
         this.avatar = avatar;
+    }
+
+    public String getReceiverName() {
+        return receiverName;
+    }
+
+    public void setReceiverName(String receiverName) {
+        this.receiverName = receiverName;
+    }
+
+    public String getShippingPhone() {
+        return shippingPhone;
+    }
+
+    public void setShippingPhone(String shippingPhone) {
+        this.shippingPhone = shippingPhone;
+    }
+
+    public String getShippingAddress() {
+        return shippingAddress;
+    }
+
+    public void setShippingAddress(String shippingAddress) {
+        this.shippingAddress = shippingAddress;
+    }
+
+    public BigDecimal getShippingLat() {
+        return shippingLat;
+    }
+
+    public void setShippingLat(BigDecimal shippingLat) {
+        this.shippingLat = shippingLat;
+    }
+
+    public BigDecimal getShippingLng() {
+        return shippingLng;
+    }
+
+    public void setShippingLng(BigDecimal shippingLng) {
+        this.shippingLng = shippingLng;
     }
 
     public Integer getStatus() {

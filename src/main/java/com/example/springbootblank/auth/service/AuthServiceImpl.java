@@ -71,6 +71,7 @@ public class AuthServiceImpl implements AuthService {
         userInfo.put("id", user.getId());
         userInfo.put("username", user.getUsername());
         userInfo.put("nickname", user.getNickname() != null ? user.getNickname() : user.getUsername());
+        userInfo.put("avatar", user.getAvatar());
 
         Map<String, Object> data = new HashMap<>();
         data.put("token", token);
@@ -123,18 +124,25 @@ public class AuthServiceImpl implements AuthService {
             if (user == null || (user.getStatus() != null && user.getStatus() == 0)) {
                 throw new UnauthorizedException("未登录或 Token 无效");
             }
-            return new AuthMeResponse(user.getId(), JwtService.TYPE_USER, user.getUsername(), null);
+            String userDisplay =
+                    StringUtils.hasText(user.getNickname()) ? user.getNickname() : user.getUsername();
+            return new AuthMeResponse(
+                    user.getId(), JwtService.TYPE_USER, user.getUsername(), null, userDisplay, user.getAvatar());
         }
         if (JwtService.TYPE_EMPLOYEE.equals(principal.type())) {
             Employee employee = authMapper.findEmployeeByIdWithRole(principal.id());
             if (employee == null || (employee.getEnabled() != null && employee.getEnabled() == 0)) {
                 throw new UnauthorizedException("未登录或 Token 无效");
             }
+            String empDisplay =
+                    StringUtils.hasText(employee.getRealName()) ? employee.getRealName() : employee.getUsername();
             return new AuthMeResponse(
                     employee.getId(),
                     JwtService.TYPE_EMPLOYEE,
                     employee.getUsername(),
-                    employee.getRoleCode()
+                    employee.getRoleCode(),
+                    empDisplay,
+                    null
             );
         }
         throw new UnauthorizedException("未登录或 Token 无效");

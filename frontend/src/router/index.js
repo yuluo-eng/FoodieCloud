@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { authBeforeEach } from '@/router/guards'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -8,16 +8,25 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: () => import('@/views/HomeView.vue'),
+      meta: { public: true },
     },
     {
       path: '/user/login',
       name: 'user-login',
       component: () => import('@/views/user/UserLoginView.vue'),
+      meta: { guestOnly: 'user' },
     },
     {
       path: '/user/register',
       name: 'user-register',
       component: () => import('@/views/user/UserRegisterView.vue'),
+      meta: { guestOnly: 'user' },
+    },
+    {
+      path: '/user/profile',
+      name: 'user-profile',
+      component: () => import('@/views/user/UserProfileView.vue'),
+      meta: { requiresUser: true },
     },
     {
       path: '/user',
@@ -29,6 +38,7 @@ const router = createRouter({
       path: '/merchant/login',
       name: 'merchant-login',
       component: () => import('@/views/merchant/MerchantLoginView.vue'),
+      meta: { guestOnly: 'merchant' },
     },
     {
       path: '/merchant',
@@ -39,15 +49,6 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
-  const auth = useAuthStore()
-  if (to.meta.requiresUser && !auth.isUserLoggedIn) {
-    return { name: 'user-login', query: { redirect: to.fullPath } }
-  }
-  if (to.meta.requiresMerchant && !auth.isMerchantLoggedIn) {
-    return { name: 'merchant-login', query: { redirect: to.fullPath } }
-  }
-  return true
-})
+router.beforeEach(authBeforeEach)
 
 export default router

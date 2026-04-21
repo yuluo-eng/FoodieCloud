@@ -17,16 +17,32 @@
     </select>
 
     <select id="findUserByUsername" resultType="com.example.springbootblank.auth.entity.User">
-        SELECT id, username, password, phone, nickname, avatar, status, create_time, update_time
+        SELECT id, username, password, phone, nickname, avatar,
+               receiver_name, shipping_phone, shipping_address, shipping_lat, shipping_lng,
+               status, create_time, update_time
         FROM `user`
         WHERE username = #{username}
     </select>
 
     <select id="findUserById" resultType="com.example.springbootblank.auth.entity.User">
-        SELECT id, username, password, phone, nickname, avatar, status, create_time, update_time
+        SELECT id, username, password, phone, nickname, avatar,
+               receiver_name, shipping_phone, shipping_address, shipping_lat, shipping_lng,
+               status, create_time, update_time
         FROM `user`
         WHERE id = #{id}
     </select>
+
+    <update id="updateUserProfile">
+        UPDATE `user`
+        SET nickname = #{nickname},
+            avatar = #{avatar},
+            receiver_name = #{receiverName},
+            shipping_phone = #{shippingPhone},
+            shipping_address = #{shippingAddress},
+            shipping_lat = #{shippingLat},
+            shipping_lng = #{shippingLng}
+        WHERE id = #{id}
+    </update>
 
     <select id="findEmployeeByUsernameWithRole" resultType="com.example.springbootblank.employee.entity.Employee">
         SELECT e.id,

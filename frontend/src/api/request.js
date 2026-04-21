@@ -2,18 +2,24 @@ import axios from 'axios'
 
 const U_KEY = 'ysh_user_token'
 const M_KEY = 'ysh_merchant_token'
+const U_PROFILE_KEY = 'ysh_user_profile'
+const M_PROFILE_KEY = 'ysh_merchant_profile'
 
 function handleUnauthorized() {
   const p = window.location.pathname || ''
   if (p.startsWith('/merchant')) {
     localStorage.removeItem(M_KEY)
+    localStorage.removeItem(M_PROFILE_KEY)
     window.location.href = '/merchant/login'
   } else if (p.startsWith('/user')) {
     localStorage.removeItem(U_KEY)
+    localStorage.removeItem(U_PROFILE_KEY)
     window.location.href = '/user/login'
   } else {
     localStorage.removeItem(U_KEY)
     localStorage.removeItem(M_KEY)
+    localStorage.removeItem(U_PROFILE_KEY)
+    localStorage.removeItem(M_PROFILE_KEY)
     window.location.href = '/user/login'
   }
 }

@@ -18,6 +18,8 @@ public interface AuthMapper {
 
     User findUserById(@Param("id") Long id);
 
+    int updateUserProfile(User user);
+
     Employee findEmployeeByUsernameWithRole(@Param("username") String username);
 
     Employee findEmployeeByIdWithRole(@Param("id") Long id);

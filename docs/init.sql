@@ -13,6 +13,11 @@ CREATE TABLE IF NOT EXISTS user (
   phone VARCHAR(20) UNIQUE COMMENT '手机号',
   nickname VARCHAR(50) COMMENT '昵称',
   avatar VARCHAR(255) COMMENT '头像URL',
+  receiver_name VARCHAR(50) COMMENT '收货人',
+  shipping_phone VARCHAR(20) COMMENT '收货电话',
+  shipping_address VARCHAR(500) COMMENT '收货详细地址',
+  shipping_lat DECIMAL(10, 7) COMMENT '收货地纬度',
+  shipping_lng DECIMAL(10, 7) COMMENT '收货地经度',
   status TINYINT NOT NULL DEFAULT 1 COMMENT '状态 1正常 0禁用',
   create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

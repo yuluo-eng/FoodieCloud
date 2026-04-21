@@ -23,6 +23,7 @@ async function onSubmit() {
       password: password.value,
     })
     auth.setMerchantToken(data.token)
+    auth.setMerchantFromLogin(data.employeeInfo)
     const redirect = route.query.redirect || '/merchant'
     router.replace(typeof redirect === 'string' ? redirect : '/merchant')
   } catch (e) {

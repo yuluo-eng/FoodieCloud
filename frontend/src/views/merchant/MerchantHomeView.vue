@@ -10,8 +10,7 @@
           <a href="#" @click.prevent="activeTab = 'employees'">👥 员工管理</a>
         </li>
         <li :class="{ active: activeTab === 'menu' }">
-          <a href="#" @click.prevent="activeTab = 'me' +
-           'nu'">🍽️ 菜单管理</a>
+          <a href="#" @click.prevent="activeTab = 'menu'">🍽️ 菜单管理</a>
         </li>
         <li :class="{ active: activeTab === 'shop' }">
           <a href="#" @click.prevent="activeTab = 'shop'">🏪 店铺设置</a>
@@ -21,7 +20,12 @@
         </li>
       </ul>
       <div class="user-info">
-        <p>{{ currentUser.username }}</p>
+        <p class="display-name">{{ auth.merchantDisplayLabel }}</p>
+        <p v-if="auth.merchantRoleLabel || auth.merchantProfile?.username" class="sub-line">
+          <span v-if="auth.merchantRoleLabel">{{ auth.merchantRoleLabel }}</span>
+          <span v-if="auth.merchantRoleLabel && auth.merchantProfile?.username"> · </span>
+          <span v-if="auth.merchantProfile?.username">@{{ auth.merchantProfile.username }}</span>
+        </p>
         <button @click="logout" class="btn-logout">退出登录</button>
       </div>
     </nav>
@@ -71,7 +75,6 @@ import MerchantOrdersView from './MerchantOrdersView.vue'
 const router = useRouter()
 const auth = useAuthStore()
 const activeTab = ref('dashboard')
-const currentUser = ref({ username: '' })
 const stats = ref({
   totalOrders: 0,
   totalRevenue: 0,
@@ -81,10 +84,7 @@ const stats = ref({
 
 onMounted(async () => {
   try {
-    const res = await request.get('/auth/me', {
-      headers: { Authorization: `Bearer ${auth.merchantToken}` },
-    })
-    currentUser.value = res.data.data
+    await auth.refreshMerchantProfile()
   } catch (err) {
     console.error('获取用户信息失败', err)
     router.push('/merchant/login')

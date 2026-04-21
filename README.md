@@ -70,8 +70,39 @@
 | 路径 | 说明 |
 |------|------|
 | `docs/backend-api.md` | 后端接口约定（路径、请求/响应示例） |
-| `docs/init.sql` | 数据库初始化脚本 |
+| `docs/init.sql` | 数据库初始化脚本（**全新建库**：含 `user` 收货字段） |
+| `docs/patch-user-shipping.sql` | **存量数据库**补丁：为已有 `user` 表增加收货人、收货电话、地址、经纬度等字段（执行一次即可） |
 | `src/main/java/...` | 业务代码（按模块划分） |
+
+---
+
+## 近期开发记录（用户资料 · 鉴权体验 · 逆地理）
+
+以下为同一阶段已落地内容，便于答辩说明「前后端如何协作、数据如何入库」。
+
+### 数据库说明（重要）
+
+- 头像、昵称、收货信息等均落在 **`user` 表**，**不另建新表**。
+- **全新执行** `docs/init.sql` 建库：已包含收货相关列。
+- **库已存在、且曾报 `Unknown column 'receiver_name'`**：在目标库执行一次 `docs/patch-user-shipping.sql` 后再启动后端。
+
+### 后端
+
+- **顾客资料**：`GET /api/user/profile`、`PUT /api/user/profile`（JWT 类型为 `USER`）。
+- **头像上传**：`POST /api/user/upload/avatar`（`multipart/form-data`，字段 `file`），文件落在 `app.upload.dir`，通过 `/uploads/**` 对外访问。
+- **逆地理编码**：`GET /api/user/geocode/reverse?latitude=&longitude=`；由 `GeocodeService` 使用 **Java HttpClient** 请求 **OpenStreetMap Nominatim** 公网接口，解析 JSON 中的 `display_name` 为可读地址；需合规 `User-Agent`，生产环境可替换为国内地图服务。
+- **鉴权组件**：`UserAuthGuard` 校验顾客 Token；`/api/auth/me` 的 `AuthMeResponse` 增加 **`avatar`** 字段；`pom.xml` 显式依赖 **`jackson-databind`**，避免 IDE 无法解析 Jackson。
+
+### 前端
+
+- **路由守卫**：`frontend/src/router/guards.js` + 各路由 `meta`（`requiresUser` / `requiresMerchant` / `guestOnly`），未登录访问受保护页会跳转登录。
+- **身份展示**：Pinia `stores/auth.js` 持久化顾客/商家展示信息；顾客顶栏可点头像区域进入资料页。
+- **个人资料页**：路由 `/user/profile`（`UserProfileView.vue`），支持昵称、头像、收货信息；「根据当前位置填写地址」流程为：浏览器 `navigator.geolocation` 取经纬度 → 调用后端逆地理接口 → 回填表单 → 用户点击「保存」后 `PUT /user/profile` 写入数据库。
+- **开发代理**：`vite.config.js` 已代理 `/api` 与 **`/uploads`**，本地可正常预览上传头像。
+
+### 代码仓库
+
+- 远程：`https://github.com/yuluo-eng/FoodieCloud.git`（推送前请确认本地已 `git remote add origin` 并完成首次 `push`）。
 
 ---
 
@@ -81,7 +112,8 @@
 
 ### 后端进展
 
-- ✅ 认证：用户注册/登录、员工登录、`/api/auth/me`
+- ✅ 认证：用户注册/登录、员工登录、`/api/auth/me`（顾客响应含 `avatar`）
+- ✅ 顾客资料：`/api/user/profile`、头像上传 `/api/user/upload/avatar`、逆地理 `/api/user/geocode/reverse`
 - ✅ 菜品：商家端 CRUD、上下架；用户端可售菜品查询
 - ✅ 员工：列表、新增、修改、删除、启停、角色列表
 - ✅ 购物车：列表、加入、改数量、删除、勾选、清空
@@ -97,6 +129,8 @@
 - ✅ 用户端：菜品展示、购物车、下单、订单页、模拟支付按钮
 - ✅ 商家端：员工管理、菜品管理、订单管理
 - ✅ 菜品图片策略：优先 `image_url`，为空时关键词映射本地图
+- ✅ 路由守卫（登录态与访客页）、顾客/商家身份展示（含头像与昵称类信息）
+- ✅ 用户端个人资料页（头像、昵称、收货信息、定位辅助填地址）
 
 ---
 

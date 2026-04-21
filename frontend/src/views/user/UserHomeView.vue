@@ -5,6 +5,12 @@
         <h1>🍽️ 悦食汇</h1>
       </div>
       <div class="nav-right">
+        <RouterLink v-if="auth.userDisplayLabel" class="identity identity-link" to="/user/profile" title="个人资料">
+          <img v-if="auth.userAvatarSrc" class="identity-avatar" :src="auth.userAvatarSrc" alt="" />
+          <span v-else class="identity-avatar-ph">{{ (auth.userDisplayLabel || '?').slice(0, 1) }}</span>
+          <span class="identity-name">{{ auth.userDisplayLabel }}</span>
+          <span class="identity-tag">顾客</span>
+        </RouterLink>
         <button class="btn-cart" @click="showCart = true">
           🛒 购物车 <span v-if="cartCount > 0" class="badge">{{ cartCount }}</span>
         </button>
@@ -81,7 +87,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import request from '@/api/request'
 import UserOrdersView from './UserOrdersView.vue'
@@ -116,6 +122,12 @@ const allSelected = computed(() => {
 })
 
 onMounted(async () => {
+  try {
+    await auth.refreshUserProfile()
+  } catch (e) {
+    console.error('同步用户信息失败', e)
+  }
+
   try {
     loadError.value = ''
     const res = await request.get('/user/dishes', {
@@ -330,6 +342,62 @@ function logout() {
   display: flex;
   gap: 15px;
   align-items: center;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.identity-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.identity-link:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.identity-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.identity-avatar-ph {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.identity-name {
+  font-weight: 600;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.identity-tag {
+  font-size: 11px;
+  opacity: 0.9;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 4px;
 }
 
 .btn-cart,
