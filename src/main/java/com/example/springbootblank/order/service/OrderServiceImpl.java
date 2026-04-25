@@ -10,6 +10,7 @@ import com.example.springbootblank.order.entity.OrderItem;
 import com.example.springbootblank.order.mapper.OrderMapper;
 import io.jsonwebtoken.JwtException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
@@ -33,6 +34,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> createOrder(String authorization, OrderCreateRequest req) {
         Long userId = resolveUserId(authorization);
         Long shopId = req.shopId() == null ? 1L : req.shopId();
@@ -71,7 +73,10 @@ public class OrderServiceImpl implements OrderService {
             orderMapper.insertOrderItem(oi);
         }
 
-        cartMapper.clearSelectedCart(userId);
+        int cleared = cartMapper.clearSelectedCart(userId);
+        if (cleared <= 0) {
+            throw new BusinessException(409, "购物车状态已变化，请重试下单");
+        }
 
         return Map.of(
                 "orderId", order.getId(),

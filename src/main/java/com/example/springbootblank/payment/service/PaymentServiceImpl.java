@@ -11,6 +11,7 @@ import com.example.springbootblank.payment.entity.PaymentRecord;
 import com.example.springbootblank.payment.mapper.PaymentMapper;
 import io.jsonwebtoken.JwtException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
@@ -57,15 +58,28 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void mockSuccess(PaymentMockSuccessRequest req) {
         Map<String, Object> payment = paymentMapper.findPaymentByNo(req.paymentNo());
         if (payment == null) {
             throw new BusinessException(404, "支付单不存在");
         }
 
-        paymentMapper.markPaymentSuccess(req.paymentNo());
+        Integer payStatus = payment.get("payStatus") == null ? null : ((Number) payment.get("payStatus")).intValue();
+        if (payStatus != null && payStatus == 1) {
+            return;
+        }
+
+        int paymentRows = paymentMapper.markPaymentSuccess(req.paymentNo());
+        if (paymentRows == 0) {
+            throw new BusinessException(409, "支付状态已变化，请刷新后重试");
+        }
+
         Long orderId = ((Number) payment.get("orderId")).longValue();
-        orderMapper.updateOrderPaySuccess(orderId);
+        int orderRows = orderMapper.updateOrderPaySuccess(orderId);
+        if (orderRows == 0) {
+            throw new BusinessException(409, "订单状态已变化，请刷新后重试");
+        }
     }
 
     @Override
