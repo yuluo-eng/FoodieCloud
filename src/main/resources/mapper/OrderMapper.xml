@@ -182,4 +182,99 @@
           AND pay_time &lt; #{endTime}
     </select>
 
+    <select id="countDispatchOrders" resultType="long">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE status = 1
+          AND rider_id IS NULL
+    </select>
+
+    <select id="listDispatchOrders" resultType="com.example.springbootblank.order.entity.Order">
+        SELECT id,
+               order_no AS orderNo,
+               user_id AS userId,
+               shop_id AS shopId,
+               total_amount AS totalAmount,
+               remark,
+               status,
+               pay_status AS payStatus,
+               rider_id AS riderId,
+               rider_accept_time AS riderAcceptTime,
+               rider_arrive_shop_time AS riderArriveShopTime,
+               rider_pickup_time AS riderPickupTime,
+               rider_delivered_time AS riderDeliveredTime,
+               pay_time AS payTime,
+               finish_time AS finishTime,
+               cancel_time AS cancelTime,
+               create_time AS createTime,
+               update_time AS updateTime
+        FROM orders
+        WHERE status = 1
+          AND rider_id IS NULL
+        ORDER BY id ASC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <update id="riderAcceptOrder">
+        UPDATE orders
+        SET status = 2,
+            rider_id = #{riderId},
+            rider_accept_time = NOW()
+        WHERE id = #{orderId}
+          AND status = 1
+          AND rider_id IS NULL
+    </update>
+
+    <select id="listRiderCurrentOrders" resultType="com.example.springbootblank.order.entity.Order">
+        SELECT id,
+               order_no AS orderNo,
+               user_id AS userId,
+               shop_id AS shopId,
+               total_amount AS totalAmount,
+               remark,
+               status,
+               pay_status AS payStatus,
+               rider_id AS riderId,
+               rider_accept_time AS riderAcceptTime,
+               rider_arrive_shop_time AS riderArriveShopTime,
+               rider_pickup_time AS riderPickupTime,
+               rider_delivered_time AS riderDeliveredTime,
+               pay_time AS payTime,
+               finish_time AS finishTime,
+               cancel_time AS cancelTime,
+               create_time AS createTime,
+               update_time AS updateTime
+        FROM orders
+        WHERE rider_id = #{riderId}
+          AND status IN (2, 3, 4)
+        ORDER BY id DESC
+    </select>
+
+    <update id="riderArriveShop">
+        UPDATE orders
+        SET status = 3,
+            rider_arrive_shop_time = NOW()
+        WHERE id = #{orderId}
+          AND rider_id = #{riderId}
+          AND status = 2
+    </update>
+
+    <update id="riderPickup">
+        UPDATE orders
+        SET rider_pickup_time = NOW()
+        WHERE id = #{orderId}
+          AND rider_id = #{riderId}
+          AND status = 3
+    </update>
+
+    <update id="riderDelivered">
+        UPDATE orders
+        SET status = 4,
+            rider_delivered_time = NOW(),
+            finish_time = NOW()
+        WHERE id = #{orderId}
+          AND rider_id = #{riderId}
+          AND status = 3
+    </update>
+
 </mapper>

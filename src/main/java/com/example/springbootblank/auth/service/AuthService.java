@@ -14,5 +14,7 @@ public interface AuthService {
 
     Map<String, Object> employeeLogin(LoginRequest req);
 
+    Map<String, Object> riderLogin(LoginRequest req);
+
     AuthMeResponse me(String authorizationHeader);
 }

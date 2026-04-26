@@ -2,8 +2,10 @@ import axios from 'axios'
 
 const U_KEY = 'ysh_user_token'
 const M_KEY = 'ysh_merchant_token'
+const R_KEY = 'ysh_rider_token'
 const U_PROFILE_KEY = 'ysh_user_profile'
 const M_PROFILE_KEY = 'ysh_merchant_profile'
+const R_PROFILE_KEY = 'ysh_rider_profile'
 
 function handleUnauthorized() {
   const p = window.location.pathname || ''
@@ -11,6 +13,10 @@ function handleUnauthorized() {
     localStorage.removeItem(M_KEY)
     localStorage.removeItem(M_PROFILE_KEY)
     window.location.href = '/merchant/login'
+  } else if (p.startsWith('/rider')) {
+    localStorage.removeItem(R_KEY)
+    localStorage.removeItem(R_PROFILE_KEY)
+    window.location.href = '/rider/login'
   } else if (p.startsWith('/user')) {
     localStorage.removeItem(U_KEY)
     localStorage.removeItem(U_PROFILE_KEY)
@@ -20,6 +26,7 @@ function handleUnauthorized() {
     localStorage.removeItem(M_KEY)
     localStorage.removeItem(U_PROFILE_KEY)
     localStorage.removeItem(M_PROFILE_KEY)
+    localStorage.removeItem(R_PROFILE_KEY)
     window.location.href = '/user/login'
   }
 }

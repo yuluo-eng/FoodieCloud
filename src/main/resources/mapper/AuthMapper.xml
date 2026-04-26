@@ -77,4 +77,32 @@
                  INNER JOIN role r ON e.role_id = r.id
         WHERE e.id = #{id}
     </select>
+
+    <select id="findRiderByUsername" resultType="com.example.springbootblank.rider.entity.Rider">
+        SELECT id,
+               username,
+               password,
+               real_name AS realName,
+               phone,
+               enabled,
+               work_status AS workStatus,
+               create_time AS createTime,
+               update_time AS updateTime
+        FROM rider
+        WHERE username = #{username}
+    </select>
+
+    <select id="findRiderById" resultType="com.example.springbootblank.rider.entity.Rider">
+        SELECT id,
+               username,
+               password,
+               real_name AS realName,
+               phone,
+               enabled,
+               work_status AS workStatus,
+               create_time AS createTime,
+               update_time AS updateTime
+        FROM rider
+        WHERE id = #{id}
+    </select>
 </mapper>

@@ -456,7 +456,129 @@
 
 - `GET /api/user/payments/{paymentNo}/status`
 
-## 9. 状态码与业务规则建议
+## 9. 骑手模块 Rider（骑手端）
+
+### 9.1 骑手登录
+
+- `POST /api/auth/rider/login`
+
+请求:
+
+```json
+{
+  "username": "rider01",
+  "password": "123456"
+}
+```
+
+返回:
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "data": {
+    "token": "jwt-token",
+    "riderInfo": {
+      "id": 1,
+      "username": "rider01",
+      "realName": "张骑手",
+      "enabled": 1
+    }
+  }
+}
+```
+
+### 9.2 获取骑手信息
+
+- `GET /api/rider/me`
+
+返回:
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "data": {
+    "id": 1,
+    "username": "rider01",
+    "realName": "张骑手",
+    "phone": "13900000009",
+    "workStatus": "ONLINE"
+  }
+}
+```
+
+### 9.3 切换接单状态
+
+- `PATCH /api/rider/work-status`
+
+请求:
+
+```json
+{
+  "workStatus": "ONLINE"
+}
+```
+
+说明：`ONLINE` 表示可接单，`OFFLINE` 表示暂停接单。
+
+### 9.4 可接订单池
+
+- `GET /api/rider/orders/dispatch?page=1&pageSize=10`
+
+说明：仅返回已支付且未被骑手接单的订单。
+
+### 9.5 骑手接单
+
+- `PATCH /api/rider/orders/{orderId}/accept`
+
+返回:
+
+```json
+{
+  "code": 200,
+  "msg": "接单成功",
+  "data": {
+    "orderId": 1001,
+    "status": 2
+  }
+}
+```
+
+### 9.6 骑手当前进行中订单
+
+- `GET /api/rider/orders/current`
+
+### 9.7 骑手到店
+
+- `PATCH /api/rider/orders/{orderId}/arrive-shop`
+
+### 9.8 骑手取餐
+
+- `PATCH /api/rider/orders/{orderId}/pickup`
+
+### 9.9 骑手送达
+
+- `PATCH /api/rider/orders/{orderId}/delivered`
+
+### 9.10 骑手位置上报（可选增强）
+
+- `POST /api/rider/location/report`
+
+请求:
+
+```json
+{
+  "orderId": 1001,
+  "lat": 31.2304,
+  "lng": 121.4737,
+  "accuracy": 15.2,
+  "reportedAt": "2026-04-26 13:30:00"
+}
+```
+
+## 10. 状态码与业务规则建议
 
 - `200`：成功
 - `400`：参数错误
@@ -471,3 +593,6 @@
 - 菜品下架或库存不足时禁止加入购物车
 - 未支付订单才能取消
 - 订单状态流转必须按顺序，不允许跳状态
+- 骑手接单需满足骑手状态为 `ONLINE`
+- 同一订单只允许一个骑手接单成功，其余请求返回业务冲突
+- 骑手端状态流转建议：`已支付 -> 骑手已接单 -> 骑手到店 -> 已取餐 -> 已送达 -> 已完成`

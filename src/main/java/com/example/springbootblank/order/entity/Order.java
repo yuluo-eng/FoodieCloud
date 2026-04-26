@@ -12,6 +12,11 @@ public class Order {
     private String remark;
     private Integer status;
     private Integer payStatus;
+    private Long riderId;
+    private LocalDateTime riderAcceptTime;
+    private LocalDateTime riderArriveShopTime;
+    private LocalDateTime riderPickupTime;
+    private LocalDateTime riderDeliveredTime;
     private LocalDateTime payTime;
     private LocalDateTime finishTime;
     private LocalDateTime cancelTime;
@@ -80,6 +85,46 @@ public class Order {
 
     public void setPayStatus(Integer payStatus) {
         this.payStatus = payStatus;
+    }
+
+    public Long getRiderId() {
+        return riderId;
+    }
+
+    public void setRiderId(Long riderId) {
+        this.riderId = riderId;
+    }
+
+    public LocalDateTime getRiderAcceptTime() {
+        return riderAcceptTime;
+    }
+
+    public void setRiderAcceptTime(LocalDateTime riderAcceptTime) {
+        this.riderAcceptTime = riderAcceptTime;
+    }
+
+    public LocalDateTime getRiderArriveShopTime() {
+        return riderArriveShopTime;
+    }
+
+    public void setRiderArriveShopTime(LocalDateTime riderArriveShopTime) {
+        this.riderArriveShopTime = riderArriveShopTime;
+    }
+
+    public LocalDateTime getRiderPickupTime() {
+        return riderPickupTime;
+    }
+
+    public void setRiderPickupTime(LocalDateTime riderPickupTime) {
+        this.riderPickupTime = riderPickupTime;
+    }
+
+    public LocalDateTime getRiderDeliveredTime() {
+        return riderDeliveredTime;
+    }
+
+    public void setRiderDeliveredTime(LocalDateTime riderDeliveredTime) {
+        this.riderDeliveredTime = riderDeliveredTime;
     }
 
     public LocalDateTime getPayTime() {

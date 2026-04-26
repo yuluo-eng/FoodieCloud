@@ -52,4 +52,18 @@ public interface OrderMapper {
     BigDecimal sumMerchantRevenuePaidToday(@Param("shopId") Long shopId,
                                              @Param("startTime") LocalDateTime startTime,
                                              @Param("endTime") LocalDateTime endTime);
+
+    long countDispatchOrders();
+
+    List<Order> listDispatchOrders(@Param("offset") int offset, @Param("pageSize") int pageSize);
+
+    int riderAcceptOrder(@Param("orderId") Long orderId, @Param("riderId") Long riderId);
+
+    List<Order> listRiderCurrentOrders(@Param("riderId") Long riderId);
+
+    int riderArriveShop(@Param("orderId") Long orderId, @Param("riderId") Long riderId);
+
+    int riderPickup(@Param("orderId") Long orderId, @Param("riderId") Long riderId);
+
+    int riderDelivered(@Param("orderId") Long orderId, @Param("riderId") Long riderId);
 }

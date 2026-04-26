@@ -46,6 +46,18 @@ const router = createRouter({
       component: () => import('@/views/merchant/MerchantHomeView.vue'),
       meta: { requiresMerchant: true },
     },
+    {
+      path: '/rider/login',
+      name: 'rider-login',
+      component: () => import('@/views/rider/RiderLoginView.vue'),
+      meta: { guestOnly: 'rider' },
+    },
+    {
+      path: '/rider',
+      name: 'rider-home',
+      component: () => import('@/views/rider/RiderHomeView.vue'),
+      meta: { requiresRider: true },
+    },
   ],
 })
 

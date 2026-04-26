@@ -23,4 +23,16 @@ public interface OrderService {
     void deliveryOrder(String authorization, Long orderId);
 
     void finishOrder(String authorization, Long orderId);
+
+    Map<String, Object> riderDispatchOrders(String authorization, int page, int pageSize);
+
+    Map<String, Object> riderCurrentOrders(String authorization);
+
+    void riderAcceptOrder(String authorization, Long orderId);
+
+    void riderArriveShop(String authorization, Long orderId);
+
+    void riderPickup(String authorization, Long orderId);
+
+    void riderDelivered(String authorization, Long orderId);
 }

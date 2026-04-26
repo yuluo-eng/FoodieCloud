@@ -15,6 +15,11 @@ export async function employeeLogin(payload) {
   return data.data
 }
 
+export async function riderLogin(payload) {
+  const { data } = await request.post('/auth/rider/login', payload)
+  return data.data
+}
+
 export async function fetchMe(token) {
   setAuthHeader(token)
   try {

@@ -23,6 +23,11 @@ import heroFood from '@/assets/real/beef-rice.jpg'
             <span class="tile-title">商家端</span>
             <span class="tile-desc">菜品、员工、订单全流程管理</span>
           </RouterLink>
+          <RouterLink class="tile rider" to="/rider/login">
+            <span class="tile-icon">🛵</span>
+            <span class="tile-title">骑手端</span>
+            <span class="tile-desc">接单、取餐、送达的轻量化移动网页</span>
+          </RouterLink>
         </div>
       </div>
     </div>
@@ -95,7 +100,7 @@ h1 {
 
 .actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.9rem;
 }
 
@@ -121,6 +126,7 @@ h1 {
 
 .tile.user { background: #fff7ed; }
 .tile.merchant { background: #fff1e6; }
+.tile.rider { background: #eff6ff; border-color: #bfdbfe; }
 
 .tile-icon {
   grid-row: span 2;

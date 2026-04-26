@@ -8,6 +8,8 @@ import com.example.springbootblank.order.dto.OrderCreateRequest;
 import com.example.springbootblank.order.entity.Order;
 import com.example.springbootblank.order.entity.OrderItem;
 import com.example.springbootblank.order.mapper.OrderMapper;
+import com.example.springbootblank.rider.entity.Rider;
+import com.example.springbootblank.rider.mapper.RiderMapper;
 import io.jsonwebtoken.JwtException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,11 +28,13 @@ public class OrderServiceImpl implements OrderService {
     private final JwtService jwtService;
     private final CartMapper cartMapper;
     private final OrderMapper orderMapper;
+    private final RiderMapper riderMapper;
 
-    public OrderServiceImpl(JwtService jwtService, CartMapper cartMapper, OrderMapper orderMapper) {
+    public OrderServiceImpl(JwtService jwtService, CartMapper cartMapper, OrderMapper orderMapper, RiderMapper riderMapper) {
         this.jwtService = jwtService;
         this.cartMapper = cartMapper;
         this.orderMapper = orderMapper;
+        this.riderMapper = riderMapper;
     }
 
     @Override
@@ -192,6 +196,67 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
+    @Override
+    public Map<String, Object> riderDispatchOrders(String authorization, int page, int pageSize) {
+        Long riderId = resolveRiderId(authorization);
+        ensureRiderOnline(riderId);
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.max(pageSize, 1);
+        int offset = (safePage - 1) * safeSize;
+        long total = orderMapper.countDispatchOrders();
+        List<Order> records = orderMapper.listDispatchOrders(offset, safeSize);
+        return Map.of(
+                "page", safePage,
+                "pageSize", safeSize,
+                "total", total,
+                "records", records
+        );
+    }
+
+    @Override
+    public Map<String, Object> riderCurrentOrders(String authorization) {
+        Long riderId = resolveRiderId(authorization);
+        List<Order> records = orderMapper.listRiderCurrentOrders(riderId);
+        return Map.of("records", records);
+    }
+
+    @Override
+    public void riderAcceptOrder(String authorization, Long orderId) {
+        Long riderId = resolveRiderId(authorization);
+        ensureRiderOnline(riderId);
+        int rows = orderMapper.riderAcceptOrder(orderId, riderId);
+        if (rows == 0) {
+            throw new BusinessException(400, "订单已被接单或当前状态不可接单");
+        }
+    }
+
+    @Override
+    public void riderArriveShop(String authorization, Long orderId) {
+        Long riderId = resolveRiderId(authorization);
+        int rows = orderMapper.riderArriveShop(orderId, riderId);
+        if (rows == 0) {
+            throw new BusinessException(400, "仅已接单状态可操作到店");
+        }
+    }
+
+    @Override
+    public void riderPickup(String authorization, Long orderId) {
+        Long riderId = resolveRiderId(authorization);
+        int rows = orderMapper.riderPickup(orderId, riderId);
+        if (rows == 0) {
+            throw new BusinessException(400, "仅到店状态可操作取餐");
+        }
+    }
+
+    @Override
+    public void riderDelivered(String authorization, Long orderId) {
+        Long riderId = resolveRiderId(authorization);
+        int rows = orderMapper.riderDelivered(orderId, riderId);
+        if (rows == 0) {
+            throw new BusinessException(400, "仅取餐状态可操作送达");
+        }
+    }
+
     private String buildOrderNo() {
         return "YSH" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
     }
@@ -223,6 +288,29 @@ public class OrderServiceImpl implements OrderService {
             return principal.id();
         } catch (JwtException | IllegalArgumentException e) {
             throw new UnauthorizedException("未登录或 Token 无效");
+        }
+    }
+
+    private Long resolveRiderId(String authorizationHeader) {
+        String token = extractBearer(authorizationHeader);
+        try {
+            var principal = jwtService.parse(token);
+            if (!JwtService.TYPE_RIDER.equals(principal.type())) {
+                throw new UnauthorizedException("未登录或 Token 无效");
+            }
+            return principal.id();
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new UnauthorizedException("未登录或 Token 无效");
+        }
+    }
+
+    private void ensureRiderOnline(Long riderId) {
+        Rider rider = riderMapper.findById(riderId);
+        if (rider == null || (rider.getEnabled() != null && rider.getEnabled() == 0)) {
+            throw new UnauthorizedException("未登录或 Token 无效");
+        }
+        if (!"ONLINE".equalsIgnoreCase(rider.getWorkStatus())) {
+            throw new BusinessException(400, "骑手当前为离线状态，无法接单");
         }
     }
 

@@ -9,6 +9,7 @@ import com.example.springbootblank.auth.security.JwtService;
 import com.example.springbootblank.common.error.BusinessException;
 import com.example.springbootblank.common.error.UnauthorizedException;
 import com.example.springbootblank.employee.entity.Employee;
+import com.example.springbootblank.rider.entity.Rider;
 import io.jsonwebtoken.JwtException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -110,6 +111,32 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public Map<String, Object> riderLogin(LoginRequest req) {
+        Rider rider = authMapper.findRiderByUsername(req.username().trim());
+        if (rider == null) {
+            throw new UnauthorizedException("用户名或密码错误");
+        }
+        if (rider.getEnabled() != null && rider.getEnabled() == 0) {
+            throw new UnauthorizedException("账号已禁用");
+        }
+        if (!passwordEncoder.matches(req.password(), rider.getPassword())) {
+            throw new UnauthorizedException("用户名或密码错误");
+        }
+        String token = jwtService.createRiderToken(rider.getId(), rider.getUsername());
+        Map<String, Object> riderInfo = new HashMap<>();
+        riderInfo.put("id", rider.getId());
+        riderInfo.put("username", rider.getUsername());
+        riderInfo.put("realName", rider.getRealName());
+        riderInfo.put("enabled", rider.getEnabled());
+        riderInfo.put("workStatus", rider.getWorkStatus());
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("token", token);
+        data.put("riderInfo", riderInfo);
+        return data;
+    }
+
+    @Override
     public AuthMeResponse me(String authorizationHeader) {
         String token = extractBearer(authorizationHeader);
         JwtService.JwtPrincipal principal;
@@ -142,6 +169,22 @@ public class AuthServiceImpl implements AuthService {
                     employee.getUsername(),
                     employee.getRoleCode(),
                     empDisplay,
+                    null
+            );
+        }
+        if (JwtService.TYPE_RIDER.equals(principal.type())) {
+            Rider rider = authMapper.findRiderById(principal.id());
+            if (rider == null || (rider.getEnabled() != null && rider.getEnabled() == 0)) {
+                throw new UnauthorizedException("未登录或 Token 无效");
+            }
+            String riderDisplay =
+                    StringUtils.hasText(rider.getRealName()) ? rider.getRealName() : rider.getUsername();
+            return new AuthMeResponse(
+                    rider.getId(),
+                    JwtService.TYPE_RIDER,
+                    rider.getUsername(),
+                    null,
+                    riderDisplay,
                     null
             );
         }
