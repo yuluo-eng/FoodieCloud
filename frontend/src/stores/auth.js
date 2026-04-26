@@ -4,8 +4,10 @@ import request from '@/api/request'
 
 const U_KEY = 'ysh_user_token'
 const M_KEY = 'ysh_merchant_token'
+const R_KEY = 'ysh_rider_token'
 const U_PROFILE_KEY = 'ysh_user_profile'
 const M_PROFILE_KEY = 'ysh_merchant_profile'
+const R_PROFILE_KEY = 'ysh_rider_profile'
 
 const ROLE_LABELS = {
   SUPER_ADMIN: '超级管理员',
@@ -26,11 +28,14 @@ function readJson(key) {
 export const useAuthStore = defineStore('auth', () => {
   const userToken = ref(localStorage.getItem(U_KEY) || '')
   const merchantToken = ref(localStorage.getItem(M_KEY) || '')
+  const riderToken = ref(localStorage.getItem(R_KEY) || '')
   const userProfile = ref(readJson(U_PROFILE_KEY))
   const merchantProfile = ref(readJson(M_PROFILE_KEY))
+  const riderProfile = ref(readJson(R_PROFILE_KEY))
 
   const isUserLoggedIn = computed(() => !!userToken.value)
   const isMerchantLoggedIn = computed(() => !!merchantToken.value)
+  const isRiderLoggedIn = computed(() => !!riderToken.value)
 
   const userDisplayLabel = computed(() => {
     const p = userProfile.value
@@ -47,6 +52,12 @@ export const useAuthStore = defineStore('auth', () => {
   const merchantRoleLabel = computed(() => {
     const code = merchantProfile.value?.roleCode
     return (code && ROLE_LABELS[code]) || code || ''
+  })
+
+  const riderDisplayLabel = computed(() => {
+    const p = riderProfile.value
+    if (!p) return ''
+    return p.displayName || p.realName || p.username || '骑手'
   })
 
   /** 头像地址（相对路径补全，供 img src） */
@@ -73,6 +84,14 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  function persistRiderProfile() {
+    if (riderProfile.value) {
+      localStorage.setItem(R_PROFILE_KEY, JSON.stringify(riderProfile.value))
+    } else {
+      localStorage.removeItem(R_PROFILE_KEY)
+    }
+  }
+
   function setUserToken(t) {
     userToken.value = t || ''
     if (t) localStorage.setItem(U_KEY, t)
@@ -83,6 +102,12 @@ export const useAuthStore = defineStore('auth', () => {
     merchantToken.value = t || ''
     if (t) localStorage.setItem(M_KEY, t)
     else localStorage.removeItem(M_KEY)
+  }
+
+  function setRiderToken(t) {
+    riderToken.value = t || ''
+    if (t) localStorage.setItem(R_KEY, t)
+    else localStorage.removeItem(R_KEY)
   }
 
   /** 顾客登录成功后写入 */
@@ -111,6 +136,20 @@ export const useAuthStore = defineStore('auth', () => {
       displayName,
     }
     persistMerchantProfile()
+  }
+
+  function setRiderFromLogin(riderInfo) {
+    if (!riderInfo) return
+    const displayName = riderInfo.realName || riderInfo.username
+    riderProfile.value = {
+      id: riderInfo.id,
+      username: riderInfo.username,
+      realName: riderInfo.realName ?? null,
+      enabled: riderInfo.enabled ?? 1,
+      workStatus: riderInfo.workStatus ?? 'ONLINE',
+      displayName,
+    }
+    persistRiderProfile()
   }
 
   /** 拉取完整顾客资料（含头像、收货信息） */
@@ -170,6 +209,22 @@ export const useAuthStore = defineStore('auth', () => {
     persistMerchantProfile()
   }
 
+  async function refreshRiderProfile() {
+    if (!riderToken.value) return
+    const res = await request.get('/auth/me', {
+      headers: { Authorization: `Bearer ${riderToken.value}` },
+    })
+    const me = res.data.data
+    if (me?.type !== 'RIDER') return
+    riderProfile.value = {
+      id: me.id,
+      username: me.username,
+      realName: me.displayName !== me.username ? me.displayName : null,
+      displayName: me.displayName || me.username,
+    }
+    persistRiderProfile()
+  }
+
   function logoutUser() {
     setUserToken('')
     userProfile.value = null
@@ -182,24 +237,38 @@ export const useAuthStore = defineStore('auth', () => {
     persistMerchantProfile()
   }
 
+  function logoutRider() {
+    setRiderToken('')
+    riderProfile.value = null
+    persistRiderProfile()
+  }
+
   return {
     userToken,
     merchantToken,
+    riderToken,
     userProfile,
     merchantProfile,
+    riderProfile,
     isUserLoggedIn,
     isMerchantLoggedIn,
+    isRiderLoggedIn,
     userDisplayLabel,
     userAvatarSrc,
     merchantDisplayLabel,
     merchantRoleLabel,
+    riderDisplayLabel,
     setUserToken,
     setMerchantToken,
+    setRiderToken,
     setUserFromLogin,
     setMerchantFromLogin,
+    setRiderFromLogin,
     refreshUserProfile,
     refreshMerchantProfile,
+    refreshRiderProfile,
     logoutUser,
     logoutMerchant,
+    logoutRider,
   }
 })

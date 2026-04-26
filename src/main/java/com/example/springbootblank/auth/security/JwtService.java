@@ -19,6 +19,7 @@ public class JwtService {
 
     public static final String TYPE_USER = "USER";
     public static final String TYPE_EMPLOYEE = "EMPLOYEE";
+    public static final String TYPE_RIDER = "RIDER";
 
     private final JwtProperties jwtProperties;
 
@@ -32,6 +33,10 @@ public class JwtService {
 
     public String createEmployeeToken(long employeeId, String username, String roleCode) {
         return buildToken(TYPE_EMPLOYEE, employeeId, username, roleCode);
+    }
+
+    public String createRiderToken(long riderId, String username) {
+        return buildToken(TYPE_RIDER, riderId, username, null);
     }
 
     private String buildToken(String type, long subjectId, String username, String roleCode) {

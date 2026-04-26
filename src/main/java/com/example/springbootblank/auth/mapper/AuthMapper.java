@@ -2,6 +2,7 @@ package com.example.springbootblank.auth.mapper;
 
 import com.example.springbootblank.auth.entity.User;
 import com.example.springbootblank.employee.entity.Employee;
+import com.example.springbootblank.rider.entity.Rider;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -23,4 +24,8 @@ public interface AuthMapper {
     Employee findEmployeeByUsernameWithRole(@Param("username") String username);
 
     Employee findEmployeeByIdWithRole(@Param("id") Long id);
+
+    Rider findRiderByUsername(@Param("username") String username);
+
+    Rider findRiderById(@Param("id") Long id);
 }

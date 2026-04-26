@@ -40,6 +40,11 @@ public class AuthController {
         return ApiResponse.ok(authService.employeeLogin(req));
     }
 
+    @PostMapping("/rider/login")
+    public ApiResponse<Map<String, Object>> riderLogin(@Valid @RequestBody LoginRequest req) {
+        return ApiResponse.ok(authService.riderLogin(req));
+    }
+
     @GetMapping("/me")
     public ApiResponse<AuthMeResponse> me(
             @RequestHeader(value = "Authorization", required = false) String authorization
