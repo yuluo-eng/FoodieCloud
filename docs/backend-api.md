@@ -8,6 +8,17 @@
 - 时间格式: `yyyy-MM-dd HH:mm:ss`
 - 分页参数: `page`（从 1 开始）, `pageSize`
 
+JWT 身份类型（`type`）：
+
+- `USER`：C 端用户
+- `EMPLOYEE`：商家端员工
+- `RIDER`：骑手端
+
+跨端复用 Token 的规则：
+
+- `401`：未携带 `Bearer`、Token 无法解析、已过期、签名无效
+- `403`：Token 可解析，但**身份类型不匹配**（例如用骑手 Token 访问商家端接口），或商家端员工**角色不足**
+
 统一返回体示例:
 
 ```json
@@ -462,6 +473,33 @@
 
 - `POST /api/auth/rider/login`
 
+### 9.1.1 骑手注册
+
+- `POST /api/auth/rider/register`
+
+请求:
+
+```json
+{
+  "username": "rider02",
+  "password": "123456",
+  "realName": "李骑手",
+  "phone": "13900000010"
+}
+```
+
+返回:
+
+```json
+{
+  "code": 200,
+  "msg": "注册成功",
+  "data": {
+    "riderId": 2
+  }
+}
+```
+
 请求:
 
 ```json
@@ -582,8 +620,8 @@
 
 - `200`：成功
 - `400`：参数错误
-- `401`：未登录/Token 失效
-- `403`：无权限
+- `401`：未登录 / Token 缺失 / Token 无法解析或已失效
+- `403`：无权限（含跨端 Token、以及商家端角色不足）
 - `404`：资源不存在
 - `500`：服务器错误
 

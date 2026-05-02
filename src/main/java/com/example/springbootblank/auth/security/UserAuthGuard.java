@@ -1,5 +1,6 @@
 package com.example.springbootblank.auth.security;
 
+import com.example.springbootblank.common.error.BusinessException;
 import com.example.springbootblank.common.error.UnauthorizedException;
 import io.jsonwebtoken.JwtException;
 import org.springframework.stereotype.Component;
@@ -19,7 +20,7 @@ public class UserAuthGuard {
         try {
             JwtService.JwtPrincipal principal = jwtService.parse(token);
             if (!JwtService.TYPE_USER.equals(principal.type())) {
-                throw new UnauthorizedException("未登录或 Token 无效");
+                throw new BusinessException(403, "无权限");
             }
             return principal;
         } catch (JwtException | IllegalArgumentException e) {

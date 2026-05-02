@@ -42,7 +42,7 @@
 
 ## Review 自检清单
 
-- [ ] 已对照 `docs/process/code-review-checklist.md` 自检
+- [ ] 已对照 `docs/研发流程与规范.md` 自检
 - [ ] 无敏感信息提交
 - [ ] 提交信息语义清晰（建议 Conventional Commits）
 

@@ -2,6 +2,7 @@ package com.example.springbootblank.auth.controller;
 
 import com.example.springbootblank.auth.dto.AuthMeResponse;
 import com.example.springbootblank.auth.dto.LoginRequest;
+import com.example.springbootblank.auth.dto.RiderRegisterRequest;
 import com.example.springbootblank.auth.dto.UserRegisterRequest;
 import com.example.springbootblank.auth.service.AuthService;
 import com.example.springbootblank.common.api.ApiResponse;
@@ -38,6 +39,11 @@ public class AuthController {
     @PostMapping("/employee/login")
     public ApiResponse<Map<String, Object>> employeeLogin(@Valid @RequestBody LoginRequest req) {
         return ApiResponse.ok(authService.employeeLogin(req));
+    }
+
+    @PostMapping("/rider/register")
+    public ApiResponse<Map<String, Object>> riderRegister(@Valid @RequestBody RiderRegisterRequest req) {
+        return ApiResponse.ok("注册成功", authService.riderRegister(req));
     }
 
     @PostMapping("/rider/login")

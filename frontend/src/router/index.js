@@ -53,6 +53,12 @@ const router = createRouter({
       meta: { guestOnly: 'rider' },
     },
     {
+      path: '/rider/register',
+      name: 'rider-register',
+      component: () => import('@/views/rider/RiderRegisterView.vue'),
+      meta: { guestOnly: 'rider' },
+    },
+    {
       path: '/rider',
       name: 'rider-home',
       component: () => import('@/views/rider/RiderHomeView.vue'),

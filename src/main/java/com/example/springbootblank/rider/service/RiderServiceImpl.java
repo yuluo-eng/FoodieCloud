@@ -49,7 +49,7 @@ public class RiderServiceImpl implements RiderService {
         try {
             JwtService.JwtPrincipal principal = jwtService.parse(token);
             if (!JwtService.TYPE_RIDER.equals(principal.type())) {
-                throw new UnauthorizedException("未登录或 Token 无效");
+                throw new BusinessException(403, "无权限");
             }
             Rider rider = riderMapper.findById(principal.id());
             if (rider == null || (rider.getEnabled() != null && rider.getEnabled() == 0)) {

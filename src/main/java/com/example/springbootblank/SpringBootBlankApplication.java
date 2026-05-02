@@ -15,7 +15,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
         "com.example.springbootblank.order.mapper",
         "com.example.springbootblank.payment.mapper",
         "com.example.springbootblank.shop.mapper",
-        "com.example.springbootblank.category.mapper"
+        "com.example.springbootblank.category.mapper",
+        "com.example.springbootblank.rider.mapper"
 })
 @EnableConfigurationProperties(JwtProperties.class)
 public class SpringBootBlankApplication {

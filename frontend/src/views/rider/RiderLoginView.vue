@@ -43,7 +43,8 @@ async function onSubmit() {
         <div class="field"><label class="label">密码</label><input v-model="password" type="password" class="input" required /></div>
         <button type="submit" class="btn btn-primary full" :disabled="loading">{{ loading ? '登录中…' : '登录' }}</button>
       </form>
-      <p class="tip">默认账号见 <code>docs/init.sql</code>（如 <code>rider01/root</code>）。</p>
+      <RouterLink class="btn btn-secondary full register-btn" to="/rider/register">没有账号？立即注册</RouterLink>
+      <p class="tip">注册后可直接使用骑手账号登录。</p>
       <RouterLink class="back" to="/">← 返回首页</RouterLink>
     </div>
   </div>
@@ -54,6 +55,15 @@ async function onSubmit() {
 .form-card { width: min(420px, 100%); padding: 1.4rem; border-radius: 14px; }
 .sub { margin: .3rem 0 1rem; color: #78716c; }
 .full { width: 100%; }
+.register-btn {
+  margin-top: .7rem;
+  display: inline-flex;
+  justify-content: center;
+  text-decoration: none;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+}
 .tip { margin-top: .8rem; color: #78716c; font-size: .86rem; }
 .back { display: inline-block; margin-top: .7rem; color: #9a3412; font-weight: 600; }
 </style>
