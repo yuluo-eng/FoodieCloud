@@ -22,7 +22,7 @@ public class MerchantAuthGuard {
         try {
             JwtService.JwtPrincipal principal = jwtService.parse(token);
             if (!JwtService.TYPE_EMPLOYEE.equals(principal.type())) {
-                throw new UnauthorizedException("未登录或 Token 无效");
+                throw new BusinessException(403, "无权限");
             }
             return principal;
         } catch (JwtException | IllegalArgumentException e) {

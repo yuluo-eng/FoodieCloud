@@ -270,7 +270,7 @@ public class OrderServiceImpl implements OrderService {
         try {
             var principal = jwtService.parse(token);
             if (!JwtService.TYPE_EMPLOYEE.equals(principal.type())) {
-                throw new UnauthorizedException("未登录或 Token 无效");
+                throw new BusinessException(403, "无权限");
             }
             return principal;
         } catch (JwtException | IllegalArgumentException e) {
@@ -283,7 +283,7 @@ public class OrderServiceImpl implements OrderService {
         try {
             var principal = jwtService.parse(token);
             if (!JwtService.TYPE_USER.equals(principal.type())) {
-                throw new UnauthorizedException("未登录或 Token 无效");
+                throw new BusinessException(403, "无权限");
             }
             return principal.id();
         } catch (JwtException | IllegalArgumentException e) {
@@ -296,7 +296,7 @@ public class OrderServiceImpl implements OrderService {
         try {
             var principal = jwtService.parse(token);
             if (!JwtService.TYPE_RIDER.equals(principal.type())) {
-                throw new UnauthorizedException("未登录或 Token 无效");
+                throw new BusinessException(403, "无权限");
             }
             return principal.id();
         } catch (JwtException | IllegalArgumentException e) {

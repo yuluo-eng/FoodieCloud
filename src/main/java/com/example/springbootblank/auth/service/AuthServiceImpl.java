@@ -2,6 +2,7 @@ package com.example.springbootblank.auth.service;
 
 import com.example.springbootblank.auth.dto.AuthMeResponse;
 import com.example.springbootblank.auth.dto.LoginRequest;
+import com.example.springbootblank.auth.dto.RiderRegisterRequest;
 import com.example.springbootblank.auth.dto.UserRegisterRequest;
 import com.example.springbootblank.auth.entity.User;
 import com.example.springbootblank.auth.mapper.AuthMapper;
@@ -111,6 +112,27 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public Map<String, Object> riderRegister(RiderRegisterRequest req) {
+        String username = req.username().trim();
+        if (authMapper.countRiderByUsername(username) > 0) {
+            throw new BusinessException(400, "用户名已存在");
+        }
+        String phone = req.phone().trim();
+        if (authMapper.countRiderByPhone(phone) > 0) {
+            throw new BusinessException(400, "手机号已被注册");
+        }
+        Rider rider = new Rider();
+        rider.setUsername(username);
+        rider.setPassword(passwordEncoder.encode(req.password()));
+        rider.setRealName(req.realName().trim());
+        rider.setPhone(phone);
+        rider.setEnabled(1);
+        rider.setWorkStatus("ONLINE");
+        authMapper.insertRider(rider);
+        return Map.of("riderId", rider.getId());
+    }
+
+    @Override
     public Map<String, Object> riderLogin(LoginRequest req) {
         Rider rider = authMapper.findRiderByUsername(req.username().trim());
         if (rider == null) {
@@ -188,7 +210,7 @@ public class AuthServiceImpl implements AuthService {
                     null
             );
         }
-        throw new UnauthorizedException("未登录或 Token 无效");
+        throw new BusinessException(403, "无权限");
     }
 
     private static String extractBearer(String authorizationHeader) {

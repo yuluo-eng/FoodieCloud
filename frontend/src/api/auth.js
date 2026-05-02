@@ -20,6 +20,11 @@ export async function riderLogin(payload) {
   return data.data
 }
 
+export async function riderRegister(payload) {
+  const { data } = await request.post('/auth/rider/register', payload)
+  return data.data
+}
+
 export async function fetchMe(token) {
   setAuthHeader(token)
   try {

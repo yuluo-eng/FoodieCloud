@@ -25,6 +25,12 @@ public interface AuthMapper {
 
     Employee findEmployeeByIdWithRole(@Param("id") Long id);
 
+    int insertRider(Rider rider);
+
+    int countRiderByUsername(@Param("username") String username);
+
+    int countRiderByPhone(@Param("phone") String phone);
+
     Rider findRiderByUsername(@Param("username") String username);
 
     Rider findRiderById(@Param("id") Long id);

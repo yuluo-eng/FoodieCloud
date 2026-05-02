@@ -2,7 +2,6 @@ package com.example.springbootblank.auth.security;
 
 import com.example.springbootblank.auth.config.JwtProperties;
 import com.example.springbootblank.common.error.BusinessException;
-import com.example.springbootblank.common.error.UnauthorizedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -46,7 +45,18 @@ class MerchantAuthGuardTest {
         String token = jwtService.createUserToken(3L, "user");
         String auth = "Bearer " + token;
 
-        assertThrows(UnauthorizedException.class,
+        BusinessException ex = assertThrows(BusinessException.class,
                 () -> merchantAuthGuard.requireEmployeeRole(auth, "SUPER_ADMIN", "SHOP_MANAGER", "STAFF"));
+        org.junit.jupiter.api.Assertions.assertEquals(403, ex.getCode());
+    }
+
+    @Test
+    void riderTokenShouldBeRejectedForMerchantGuard() {
+        String token = jwtService.createRiderToken(4L, "rider");
+        String auth = "Bearer " + token;
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> merchantAuthGuard.requireEmployeeRole(auth, "SUPER_ADMIN", "SHOP_MANAGER", "STAFF"));
+        org.junit.jupiter.api.Assertions.assertEquals(403, ex.getCode());
     }
 }

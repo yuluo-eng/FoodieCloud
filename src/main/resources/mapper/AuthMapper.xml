@@ -78,6 +78,19 @@
         WHERE e.id = #{id}
     </select>
 
+    <insert id="insertRider" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO rider (username, password, real_name, phone, enabled, work_status)
+        VALUES (#{username}, #{password}, #{realName}, #{phone}, #{enabled}, #{workStatus})
+    </insert>
+
+    <select id="countRiderByUsername" resultType="int">
+        SELECT COUNT(*) FROM rider WHERE username = #{username}
+    </select>
+
+    <select id="countRiderByPhone" resultType="int">
+        SELECT COUNT(*) FROM rider WHERE phone = #{phone}
+    </select>
+
     <select id="findRiderByUsername" resultType="com.example.springbootblank.rider.entity.Rider">
         SELECT id,
                username,

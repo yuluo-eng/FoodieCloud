@@ -107,7 +107,7 @@ public class CartServiceImpl implements CartService {
         try {
             var principal = jwtService.parse(token);
             if (!JwtService.TYPE_USER.equals(principal.type())) {
-                throw new UnauthorizedException("未登录或 Token 无效");
+                throw new BusinessException(403, "无权限");
             }
             return principal.id();
         } catch (JwtException | IllegalArgumentException e) {
