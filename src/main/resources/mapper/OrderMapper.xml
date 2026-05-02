@@ -86,6 +86,15 @@
           AND status = #{fromStatus}
     </update>
 
+    <!-- 商家端状态流转：仅适用于未分配给骑手的订单，避免覆盖骑手履约状态机 -->
+    <update id="updateOrderStatusMerchant">
+        UPDATE orders
+        SET status = #{toStatus}
+        WHERE id = #{id}
+          AND status = #{fromStatus}
+          AND rider_id IS NULL
+    </update>
+
     <update id="updateOrderCancelByUser">
         UPDATE orders
         SET status = 5,
@@ -136,6 +145,11 @@
                remark,
                status,
                pay_status AS payStatus,
+               rider_id AS riderId,
+               rider_accept_time AS riderAcceptTime,
+               rider_arrive_shop_time AS riderArriveShopTime,
+               rider_pickup_time AS riderPickupTime,
+               rider_delivered_time AS riderDeliveredTime,
                pay_time AS payTime,
                finish_time AS finishTime,
                cancel_time AS cancelTime,
@@ -265,6 +279,8 @@
         WHERE id = #{orderId}
           AND rider_id = #{riderId}
           AND status = 3
+          AND rider_arrive_shop_time IS NOT NULL
+          AND rider_pickup_time IS NULL
     </update>
 
     <update id="riderDelivered">
@@ -275,6 +291,7 @@
         WHERE id = #{orderId}
           AND rider_id = #{riderId}
           AND status = 3
+          AND rider_pickup_time IS NOT NULL
     </update>
 
 </mapper>

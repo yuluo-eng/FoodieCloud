@@ -21,6 +21,8 @@ public class GlobalExceptionHandler {
         HttpStatus status = switch (e.getCode()) {
             case 403 -> HttpStatus.FORBIDDEN;
             case 404 -> HttpStatus.NOT_FOUND;
+            case 409 -> HttpStatus.CONFLICT;
+            case 422 -> HttpStatus.UNPROCESSABLE_ENTITY;
             default -> HttpStatus.BAD_REQUEST;
         };
         return ResponseEntity.status(status)

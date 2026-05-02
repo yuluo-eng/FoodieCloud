@@ -30,6 +30,11 @@ public interface OrderMapper {
 
     int updateOrderStatus(@Param("id") Long id, @Param("fromStatus") Integer fromStatus, @Param("toStatus") Integer toStatus);
 
+    /**
+     * 商家端专用：仅当订单未分配给骑手时允许变更，避免与骑手履约状态机互相覆盖。
+     */
+    int updateOrderStatusMerchant(@Param("id") Long id, @Param("fromStatus") Integer fromStatus, @Param("toStatus") Integer toStatus);
+
     int updateOrderCancelByUser(@Param("id") Long id);
 
     long countMerchantOrders(@Param("shopId") Long shopId, @Param("status") Integer status);
