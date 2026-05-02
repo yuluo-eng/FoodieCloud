@@ -172,28 +172,37 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void acceptOrder(String authorization, Long orderId) {
         ensureMerchant(authorization);
-        int rows = orderMapper.updateOrderStatus(orderId, 1, 2);
-        if (rows == 0) {
-            throw new BusinessException(400, "仅已支付订单可接单");
-        }
+        applyMerchantStatusTransition(
+                orderId,
+                1,
+                2,
+                "仅已支付订单可接单",
+                "该订单由骑手履约，请勿在商家端接单"
+        );
     }
 
     @Override
     public void deliveryOrder(String authorization, Long orderId) {
         ensureMerchant(authorization);
-        int rows = orderMapper.updateOrderStatus(orderId, 2, 3);
-        if (rows == 0) {
-            throw new BusinessException(400, "仅已接单订单可发起配送");
-        }
+        applyMerchantStatusTransition(
+                orderId,
+                2,
+                3,
+                "仅已接单订单可发起配送",
+                "该订单由骑手配送，请在骑手端完成到店/取餐/送达"
+        );
     }
 
     @Override
     public void finishOrder(String authorization, Long orderId) {
         ensureMerchant(authorization);
-        int rows = orderMapper.updateOrderStatus(orderId, 3, 4);
-        if (rows == 0) {
-            throw new BusinessException(400, "仅配送中订单可完成");
-        }
+        applyMerchantStatusTransition(
+                orderId,
+                3,
+                4,
+                "仅配送中订单可完成",
+                "该订单由骑手配送，请在骑手端确认送达"
+        );
     }
 
     @Override
@@ -221,40 +230,108 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void riderAcceptOrder(String authorization, Long orderId) {
         Long riderId = resolveRiderId(authorization);
         ensureRiderOnline(riderId);
         int rows = orderMapper.riderAcceptOrder(orderId, riderId);
-        if (rows == 0) {
-            throw new BusinessException(400, "订单已被接单或当前状态不可接单");
+        if (rows == 1) {
+            return;
         }
+        Order o = orderMapper.findOrderById(orderId);
+        if (o == null) {
+            throw new BusinessException(404, "订单不存在");
+        }
+        if (o.getRiderId() != null && o.getRiderId().equals(riderId) && o.getStatus() != null && o.getStatus() == 2) {
+            return;
+        }
+        if (o.getRiderId() != null && !o.getRiderId().equals(riderId)) {
+            throw new BusinessException(409, "订单已被其他骑手接单");
+        }
+        throw new BusinessException(422, "当前订单状态不允许接单");
     }
 
     @Override
     public void riderArriveShop(String authorization, Long orderId) {
         Long riderId = resolveRiderId(authorization);
         int rows = orderMapper.riderArriveShop(orderId, riderId);
-        if (rows == 0) {
-            throw new BusinessException(400, "仅已接单状态可操作到店");
-        }
+        onRiderFulfillmentMismatch(
+                rows,
+                orderId,
+                riderId,
+                "当前订单状态不允许到店签到",
+                "非当前骑手订单"
+        );
     }
 
     @Override
     public void riderPickup(String authorization, Long orderId) {
         Long riderId = resolveRiderId(authorization);
         int rows = orderMapper.riderPickup(orderId, riderId);
-        if (rows == 0) {
-            throw new BusinessException(400, "仅到店状态可操作取餐");
-        }
+        onRiderFulfillmentMismatch(
+                rows,
+                orderId,
+                riderId,
+                "请先到店签到后再取餐",
+                "非当前骑手订单"
+        );
     }
 
     @Override
     public void riderDelivered(String authorization, Long orderId) {
         Long riderId = resolveRiderId(authorization);
         int rows = orderMapper.riderDelivered(orderId, riderId);
-        if (rows == 0) {
-            throw new BusinessException(400, "仅取餐状态可操作送达");
+        onRiderFulfillmentMismatch(
+                rows,
+                orderId,
+                riderId,
+                "请先取餐后再确认送达",
+                "非当前骑手订单"
+        );
+    }
+
+    private void applyMerchantStatusTransition(
+            Long orderId,
+            int fromStatus,
+            int toStatus,
+            String illegalLegMessage,
+            String riderFulfillmentMessage
+    ) {
+        int rows = orderMapper.updateOrderStatusMerchant(orderId, fromStatus, toStatus);
+        if (rows > 0) {
+            return;
         }
+        Order o = orderMapper.findOrderById(orderId);
+        if (o == null) {
+            throw new BusinessException(404, "订单不存在");
+        }
+        if (o.getRiderId() != null) {
+            throw new BusinessException(422, riderFulfillmentMessage);
+        }
+        throw new BusinessException(400, illegalLegMessage);
+    }
+
+    /**
+     * 履约步骤失败时：区分不存在、越权骑手、状态非法（422）。
+     */
+    private void onRiderFulfillmentMismatch(
+            int rows,
+            Long orderId,
+            Long riderId,
+            String illegalStateMessage,
+            String wrongRiderMessage
+    ) {
+        if (rows > 0) {
+            return;
+        }
+        Order o = orderMapper.findOrderById(orderId);
+        if (o == null) {
+            throw new BusinessException(404, "订单不存在");
+        }
+        if (o.getRiderId() == null || !o.getRiderId().equals(riderId)) {
+            throw new BusinessException(403, wrongRiderMessage);
+        }
+        throw new BusinessException(422, illegalStateMessage);
     }
 
     private String buildOrderNo() {
