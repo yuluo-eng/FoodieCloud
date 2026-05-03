@@ -1,7 +1,9 @@
 package com.example.springbootblank.auth.security;
 
+import com.example.springbootblank.auth.mapper.AuthMapper;
 import com.example.springbootblank.common.error.BusinessException;
 import com.example.springbootblank.common.error.UnauthorizedException;
+import com.example.springbootblank.employee.entity.Employee;
 import io.jsonwebtoken.JwtException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -12,9 +14,11 @@ import java.util.Set;
 public class MerchantAuthGuard {
 
     private final JwtService jwtService;
+    private final AuthMapper authMapper;
 
-    public MerchantAuthGuard(JwtService jwtService) {
+    public MerchantAuthGuard(JwtService jwtService, AuthMapper authMapper) {
         this.jwtService = jwtService;
+        this.authMapper = authMapper;
     }
 
     public JwtService.JwtPrincipal requireEmployee(String authorizationHeader) {
@@ -47,6 +51,29 @@ public class MerchantAuthGuard {
             throw new BusinessException(403, "无权限");
         }
         return principal;
+    }
+
+    /**
+     * Authenticate the employee AND resolve their shopId from DB.
+     * Returns the shopId; throws 403 if the employee is not bound to any shop.
+     */
+    public Long resolveShopId(String authorizationHeader) {
+        JwtService.JwtPrincipal principal = requireEmployee(authorizationHeader);
+        Employee employee = authMapper.findEmployeeByIdWithRole(principal.id());
+        if (employee == null || employee.getShopId() == null) {
+            throw new BusinessException(403, "无权限：未绑定店铺");
+        }
+        return employee.getShopId();
+    }
+
+    /**
+     * Authenticate employee, resolve shopId, and verify it matches the requested shopId.
+     */
+    public void requireShopAccess(String authorizationHeader, Long requestedShopId) {
+        Long actualShopId = resolveShopId(authorizationHeader);
+        if (!actualShopId.equals(requestedShopId)) {
+            throw new BusinessException(403, "无权访问该店铺数据");
+        }
     }
 
     private static String extractBearer(String authorizationHeader) {

@@ -71,6 +71,29 @@
         UPDATE dish SET status = #{status} WHERE id = #{id}
     </update>
 
+    <select id="findById" resultType="com.example.springbootblank.dish.entity.Dish">
+        SELECT id,
+               shop_id AS shopId,
+               category_id AS categoryId,
+               dish_name AS dishName,
+               price,
+               image_url AS imageUrl,
+               description,
+               stock,
+               status,
+               create_time AS createTime,
+               update_time AS updateTime
+        FROM dish
+        WHERE id = #{id}
+    </select>
+
+    <update id="deductStock">
+        UPDATE dish
+        SET stock = stock - #{quantity}
+        WHERE id = #{dishId}
+          AND stock >= #{quantity}
+    </update>
+
     <select id="listUserDishes" resultType="com.example.springbootblank.dish.entity.Dish">
         SELECT d.id,
                d.shop_id AS shopId,

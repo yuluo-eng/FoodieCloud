@@ -64,6 +64,12 @@ const router = createRouter({
       component: () => import('@/views/rider/RiderHomeView.vue'),
       meta: { requiresRider: true },
     },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('@/views/NotFoundView.vue'),
+      meta: { public: true },
+    },
   ],
 })
 

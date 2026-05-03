@@ -32,7 +32,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useToast } from '@/composables/useToast'
 import request from '@/api/request'
+
+const toast = useToast()
 
 const auth = useAuthStore()
 const form = ref({
@@ -70,9 +73,9 @@ async function save() {
     }, {
       headers: { Authorization: `Bearer ${auth.merchantToken}` },
     })
-    alert('保存成功')
+    toast.success('保存成功')
   } catch (e) {
-    alert(e.message || '保存失败')
+    toast.error(e.message || '保存失败')
   }
 }
 
@@ -86,7 +89,7 @@ async function toggleBusiness() {
     })
     form.value.businessStatus = next
   } catch (e) {
-    alert(e.message || '切换营业状态失败')
+    toast.error(e.message || '切换营业状态失败')
   }
 }
 </script>

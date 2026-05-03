@@ -1,8 +1,10 @@
 package com.example.springbootblank.order.service;
 
 import com.example.springbootblank.auth.security.JwtService;
+import com.example.springbootblank.auth.security.MerchantAuthGuard;
 import com.example.springbootblank.cart.mapper.CartMapper;
 import com.example.springbootblank.common.error.BusinessException;
+import com.example.springbootblank.log.service.OpLogService;
 import com.example.springbootblank.order.entity.Order;
 import com.example.springbootblank.order.mapper.OrderMapper;
 import com.example.springbootblank.rider.entity.Rider;
@@ -31,6 +33,10 @@ class RiderOrderFulfillmentServiceTest {
     private OrderMapper orderMapper;
     @Mock
     private RiderMapper riderMapper;
+    @Mock
+    private MerchantAuthGuard merchantAuthGuard;
+    @Mock
+    private OpLogService opLogService;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -92,12 +98,13 @@ class RiderOrderFulfillmentServiceTest {
 
     @Test
     void merchantDeliveryShouldReturn422WhenOrderAssignedToRider() {
-        mockEmployeePrincipal();
+        when(merchantAuthGuard.resolveShopId("Bearer emp-token")).thenReturn(1L);
+        Order shopOrder = new Order();
+        shopOrder.setId(200L);
+        shopOrder.setShopId(1L);
+        shopOrder.setRiderId(10L);
+        when(orderMapper.findOrderById(200L)).thenReturn(shopOrder);
         when(orderMapper.updateOrderStatusMerchant(200L, 2, 3)).thenReturn(0);
-        Order o = new Order();
-        o.setId(200L);
-        o.setRiderId(10L);
-        when(orderMapper.findOrderById(200L)).thenReturn(o);
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> orderService.deliveryOrder("Bearer emp-token", 200L));

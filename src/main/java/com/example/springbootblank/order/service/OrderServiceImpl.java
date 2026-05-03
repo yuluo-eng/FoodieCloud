@@ -1,9 +1,11 @@
 package com.example.springbootblank.order.service;
 
 import com.example.springbootblank.auth.security.JwtService;
+import com.example.springbootblank.auth.security.MerchantAuthGuard;
 import com.example.springbootblank.cart.mapper.CartMapper;
 import com.example.springbootblank.common.error.BusinessException;
 import com.example.springbootblank.common.error.UnauthorizedException;
+import com.example.springbootblank.log.service.OpLogService;
 import com.example.springbootblank.order.dto.OrderCreateRequest;
 import com.example.springbootblank.order.entity.Order;
 import com.example.springbootblank.order.entity.OrderItem;
@@ -29,12 +31,18 @@ public class OrderServiceImpl implements OrderService {
     private final CartMapper cartMapper;
     private final OrderMapper orderMapper;
     private final RiderMapper riderMapper;
+    private final MerchantAuthGuard merchantAuthGuard;
+    private final OpLogService opLogService;
 
-    public OrderServiceImpl(JwtService jwtService, CartMapper cartMapper, OrderMapper orderMapper, RiderMapper riderMapper) {
+    public OrderServiceImpl(JwtService jwtService, CartMapper cartMapper, OrderMapper orderMapper,
+                            RiderMapper riderMapper, MerchantAuthGuard merchantAuthGuard,
+                            OpLogService opLogService) {
         this.jwtService = jwtService;
         this.cartMapper = cartMapper;
         this.orderMapper = orderMapper;
         this.riderMapper = riderMapper;
+        this.merchantAuthGuard = merchantAuthGuard;
+        this.opLogService = opLogService;
     }
 
     @Override
@@ -138,7 +146,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Map<String, Object> merchantOrders(String authorization, int page, int pageSize, Long shopId, Integer status) {
-        resolveEmployee(authorization);
+        merchantAuthGuard.requireShopAccess(authorization, shopId);
 
         int safePage = Math.max(page, 1);
         int safeSize = Math.max(pageSize, 1);
@@ -157,7 +165,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Map<String, Object> merchantOrderDetail(String authorization, Long shopId, Long orderId) {
-        ensureMerchant(authorization);
+        merchantAuthGuard.requireShopAccess(authorization, shopId);
         Order order = orderMapper.findOrderById(orderId);
         if (order == null || !shopId.equals(order.getShopId())) {
             throw new BusinessException(404, "订单不存在");
@@ -171,7 +179,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void acceptOrder(String authorization, Long orderId) {
-        ensureMerchant(authorization);
+        Long shopId = merchantAuthGuard.resolveShopId(authorization);
+        ensureOrderBelongsToShop(orderId, shopId);
         applyMerchantStatusTransition(
                 orderId,
                 1,
@@ -183,7 +192,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void deliveryOrder(String authorization, Long orderId) {
-        ensureMerchant(authorization);
+        Long shopId = merchantAuthGuard.resolveShopId(authorization);
+        ensureOrderBelongsToShop(orderId, shopId);
         applyMerchantStatusTransition(
                 orderId,
                 2,
@@ -195,7 +205,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void finishOrder(String authorization, Long orderId) {
-        ensureMerchant(authorization);
+        Long shopId = merchantAuthGuard.resolveShopId(authorization);
+        ensureOrderBelongsToShop(orderId, shopId);
         applyMerchantStatusTransition(
                 orderId,
                 3,
@@ -299,6 +310,8 @@ public class OrderServiceImpl implements OrderService {
     ) {
         int rows = orderMapper.updateOrderStatusMerchant(orderId, fromStatus, toStatus);
         if (rows > 0) {
+            opLogService.log("EMPLOYEE", null, "ORDER", "STATUS_CHANGE",
+                    "订单" + orderId + " 状态 " + fromStatus + " → " + toStatus);
             return;
         }
         Order o = orderMapper.findOrderById(orderId);
@@ -334,25 +347,18 @@ public class OrderServiceImpl implements OrderService {
         throw new BusinessException(422, illegalStateMessage);
     }
 
+    private void ensureOrderBelongsToShop(Long orderId, Long shopId) {
+        Order order = orderMapper.findOrderById(orderId);
+        if (order == null) {
+            throw new BusinessException(404, "订单不存在");
+        }
+        if (!shopId.equals(order.getShopId())) {
+            throw new BusinessException(403, "无权操作其他店铺的订单");
+        }
+    }
+
     private String buildOrderNo() {
         return "YSH" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
-    }
-
-    private void ensureMerchant(String authorizationHeader) {
-        resolveEmployee(authorizationHeader);
-    }
-
-    private JwtService.JwtPrincipal resolveEmployee(String authorizationHeader) {
-        String token = extractBearer(authorizationHeader);
-        try {
-            var principal = jwtService.parse(token);
-            if (!JwtService.TYPE_EMPLOYEE.equals(principal.type())) {
-                throw new BusinessException(403, "无权限");
-            }
-            return principal;
-        } catch (JwtException | IllegalArgumentException e) {
-            throw new UnauthorizedException("未登录或 Token 无效");
-        }
     }
 
     private Long resolveUserId(String authorizationHeader) {

@@ -87,8 +87,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useToast } from '@/composables/useToast'
 import request from '@/api/request'
 import MenuBoard from '@/components/menu/MenuBoard.vue'
+
+const toast = useToast()
 
 const SHOP_ID = 1
 
@@ -207,7 +210,7 @@ async function deleteCurrentCategory() {
     const valid = new Set(categoryTabs.value.map((x) => x.id))
     dishes.value = dishes.value.filter((d) => valid.has(Number(d.categoryId)))
   } catch (e) {
-    alert(e.message || '删除失败')
+    toast.error(e.message || '删除失败')
   }
 }
 
@@ -229,7 +232,7 @@ async function saveCategory() {
       selectedCategory.value = categoryTabs.value[0].id
     }
   } catch (e) {
-    alert(e.message || '保存失败')
+    toast.error(e.message || '保存失败')
   }
 }
 
@@ -288,7 +291,7 @@ async function onFileChange(event) {
     })
     dishForm.value.imageUrl = res.data.data?.url || ''
   } catch (e) {
-    alert('上传失败')
+    toast.error('上传失败')
   } finally {
     uploading.value = false
   }
@@ -311,7 +314,7 @@ async function saveDish() {
     await loadDishes()
   } catch (e) {
     console.error(e)
-    alert(e.message || '保存失败')
+    toast.error(e.message || '保存失败')
   }
 }
 

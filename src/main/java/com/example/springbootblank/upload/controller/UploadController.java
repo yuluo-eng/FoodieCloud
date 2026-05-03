@@ -34,6 +34,11 @@ public class UploadController {
         this.merchantAuthGuard = merchantAuthGuard;
     }
 
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    private static final java.util.Set<String> ALLOWED_MIME = java.util.Set.of(
+            "image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"
+    );
+
     @PostMapping("/image")
     public ApiResponse<Map<String, Object>> uploadImage(
             @org.springframework.web.bind.annotation.RequestHeader(value = "Authorization", required = false) String authorization,
@@ -42,6 +47,14 @@ public class UploadController {
         merchantAuthGuard.requireEmployeeRole(authorization, "SUPER_ADMIN", "SHOP_MANAGER", "STAFF");
         if (file == null || file.isEmpty()) {
             throw new BusinessException(400, "请选择图片文件");
+        }
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new BusinessException(400, "图片大小不能超过 5MB");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_MIME.contains(contentType.toLowerCase(Locale.ROOT))) {
+            throw new BusinessException(400, "文件类型不合法，仅支持 jpg/png/webp/gif/svg 图片");
         }
 
         String original = file.getOriginalFilename();

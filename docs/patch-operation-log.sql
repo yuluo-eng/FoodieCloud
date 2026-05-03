@@ -1,0 +1,11 @@
+-- 操作日志表
+CREATE TABLE IF NOT EXISTS operation_log (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    operator_type   VARCHAR(20)  NOT NULL COMMENT '操作者类型: USER / EMPLOYEE / RIDER',
+    operator_id     BIGINT       DEFAULT NULL COMMENT '操作者 ID',
+    module          VARCHAR(50)  NOT NULL COMMENT '模块: AUTH / ORDER / DISH / PAYMENT',
+    action          VARCHAR(50)  NOT NULL COMMENT '动作: LOGIN / CREATE / UPDATE / DELETE / STATUS_CHANGE / PAY_SUCCESS',
+    content         VARCHAR(500) DEFAULT NULL COMMENT '描述',
+    ip              VARCHAR(50)  DEFAULT NULL COMMENT '操作 IP',
+    create_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志';

@@ -20,8 +20,8 @@
         <button :class="{ active: tab === 'current' }" @click="tab = 'current'">我的进行中</button>
       </div>
 
-      <div v-if="loading" class="tip">加载中...</div>
-      <div v-else-if="activeList.length === 0" class="tip">暂无订单</div>
+      <div v-if="loading" class="loading-row"><span class="spinner"></span> 加载中…</div>
+      <div v-else-if="activeList.length === 0" class="tip empty-tip">暂无订单，下拉刷新试试</div>
       <div v-else class="cards">
         <article v-for="order in activeList" :key="order.id" class="card">
           <div class="head">
@@ -58,9 +58,11 @@ import {
   riderPickup,
   updateRiderWorkStatus,
 } from '@/api/rider'
+import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
 const auth = useAuthStore()
+const toast = useToast()
 const tab = ref('dispatch')
 const loading = ref(false)
 const dispatchOrders = ref([])
@@ -105,7 +107,7 @@ async function accept(orderId) {
     await riderAcceptOrder(auth.riderToken, orderId)
     await loadData()
   } catch (e) {
-    alert(e.message || '接单失败')
+    toast.error(e.message || '接单失败')
   }
 }
 
@@ -114,7 +116,7 @@ async function arrive(orderId) {
     await riderArriveShop(auth.riderToken, orderId)
     await loadData()
   } catch (e) {
-    alert(e.message || '操作失败')
+    toast.error(e.message || '操作失败')
   }
 }
 
@@ -123,7 +125,7 @@ async function pickup(orderId) {
     await riderPickup(auth.riderToken, orderId)
     await loadData()
   } catch (e) {
-    alert(e.message || '操作失败')
+    toast.error(e.message || '操作失败')
   }
 }
 
@@ -132,7 +134,7 @@ async function delivered(orderId) {
     await riderDelivered(auth.riderToken, orderId)
     await loadData()
   } catch (e) {
-    alert(e.message || '操作失败')
+    toast.error(e.message || '操作失败')
   }
 }
 
@@ -147,7 +149,7 @@ async function onSwitchStatus(event) {
     }
     await loadData()
   } catch (e) {
-    alert(e.message || '状态切换失败')
+    toast.error(e.message || '状态切换失败')
   }
 }
 
@@ -171,22 +173,107 @@ function formatMoney(v) {
 </script>
 
 <style scoped>
-.rider-home { min-height: 100vh; background: #f8fafc; padding: 12px; }
-.top { background: #fff; border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.rider-home {
+  min-height: 100vh;
+  background: #f8fafc;
+  padding: 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}
+.top {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
 .top h1 { margin: 0; font-size: 20px; }
-.top p { margin: 4px 0 0; color: #64748b; }
+.top p { margin: 4px 0 0; color: #64748b; font-size: 0.9rem; }
 .right { display: flex; gap: 8px; align-items: center; }
-.right select, .btn { border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; background: #fff; }
-.panel { margin-top: 12px; background: #fff; border-radius: 12px; padding: 12px; }
-.tabs { display: flex; gap: 8px; margin-bottom: 10px; }
-.tabs button { border: none; border-radius: 8px; padding: 8px 12px; background: #f1f5f9; }
-.tabs button.active { background: #2563eb; color: #fff; }
-.cards { display: grid; gap: 10px; }
-.card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; }
-.head { display: flex; justify-content: space-between; align-items: center; }
+.right select, .btn {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #fff;
+  font-size: 0.92rem;
+  min-height: 44px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.panel {
+  margin-top: 12px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+}
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.tabs button {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #f1f5f9;
+  font-size: 0.95rem;
+  font-weight: 600;
+  min-height: 44px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.15s, color 0.15s;
+}
+.tabs button.active {
+  background: #2563eb;
+  color: #fff;
+}
+.cards {
+  display: grid;
+  gap: 10px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: calc(100vh - 220px);
+}
+.card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+}
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 .head p { margin: 0; font-weight: 600; }
-.actions { display: flex; gap: 8px; margin-top: 6px; }
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.actions .btn {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  justify-content: center;
+}
 .btn.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
 .btn.success { background: #16a34a; color: #fff; border-color: #16a34a; }
-.tip { color: #64748b; }
+.tip { color: #64748b; text-align: center; padding: 2rem 0; }
+.loading-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem 0;
+  color: #64748b;
+}
+.empty-tip { font-size: 0.95rem; }
+
+@media (max-width: 480px) {
+  .top { flex-direction: column; align-items: stretch; }
+  .right { justify-content: space-between; }
+}
 </style>

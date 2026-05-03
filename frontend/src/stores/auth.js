@@ -211,18 +211,35 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function refreshRiderProfile() {
     if (!riderToken.value) return
-    const res = await request.get('/auth/me', {
-      headers: { Authorization: `Bearer ${riderToken.value}` },
-    })
-    const me = res.data.data
-    if (me?.type !== 'RIDER') return
-    riderProfile.value = {
-      id: me.id,
-      username: me.username,
-      realName: me.displayName !== me.username ? me.displayName : null,
-      displayName: me.displayName || me.username,
+    try {
+      const res = await request.get('/rider/me', {
+        headers: { Authorization: `Bearer ${riderToken.value}` },
+      })
+      const r = res.data.data
+      if (r) {
+        setRiderFromLogin(r)
+        return
+      }
+    } catch {
+      // /rider/me not available, fall back to /auth/me
     }
-    persistRiderProfile()
+    try {
+      const res = await request.get('/auth/me', {
+        headers: { Authorization: `Bearer ${riderToken.value}` },
+      })
+      const me = res.data.data
+      if (me?.type !== 'RIDER') return
+      riderProfile.value = {
+        ...riderProfile.value,
+        id: me.id,
+        username: me.username,
+        realName: me.displayName !== me.username ? me.displayName : null,
+        displayName: me.displayName || me.username,
+      }
+      persistRiderProfile()
+    } catch {
+      // token invalid — will be caught by 401 interceptor
+    }
   }
 
   function logoutUser() {

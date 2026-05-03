@@ -6,9 +6,16 @@ import com.example.springbootblank.dish.dto.DishStatusUpdateRequest;
 import com.example.springbootblank.dish.dto.DishUpdateRequest;
 import com.example.springbootblank.dish.entity.Dish;
 import com.example.springbootblank.dish.mapper.DishMapper;
+import com.example.springbootblank.log.service.OpLogService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,12 +23,20 @@ import java.util.Map;
 @Service
 public class DishServiceImpl implements DishService {
 
+    private static final Logger log = LoggerFactory.getLogger(DishServiceImpl.class);
+
+    @Value("${app.upload.dir:uploads}")
+    private String uploadDir;
+
     private final DishMapper dishMapper;
     private final MerchantAuthGuard merchantAuthGuard;
+    private final OpLogService opLogService;
 
-    public DishServiceImpl(DishMapper dishMapper, MerchantAuthGuard merchantAuthGuard) {
+    public DishServiceImpl(DishMapper dishMapper, MerchantAuthGuard merchantAuthGuard,
+                           OpLogService opLogService) {
         this.dishMapper = dishMapper;
         this.merchantAuthGuard = merchantAuthGuard;
+        this.opLogService = opLogService;
     }
 
     @Override
@@ -56,12 +71,18 @@ public class DishServiceImpl implements DishService {
         dish.setStock(req.stock() == null ? 0 : req.stock());
         dish.setStatus(req.status() == null ? 1 : req.status());
         dishMapper.insertDish(dish);
+        opLogService.log("EMPLOYEE", null, "DISH", "CREATE",
+                "新建菜品: " + dish.getDishName() + ", ID=" + dish.getId());
         return Map.of("id", dish.getId());
     }
 
     @Override
     public void updateDish(String authorization, Long id, DishUpdateRequest req) {
         ensureDishOperator(authorization);
+
+        Dish oldDish = dishMapper.findById(id);
+        String oldImage = oldDish != null ? oldDish.getImageUrl() : null;
+
         Dish dish = new Dish();
         dish.setShopId(req.shopId());
         dish.setCategoryId(req.categoryId());
@@ -72,12 +93,19 @@ public class DishServiceImpl implements DishService {
         dish.setStock(req.stock());
         dish.setStatus(req.status());
         dishMapper.updateDish(id, dish);
+        opLogService.log("EMPLOYEE", null, "DISH", "UPDATE", "修改菜品: ID=" + id);
+
+        if (StringUtils.hasText(oldImage) && StringUtils.hasText(req.imageUrl())
+                && !oldImage.equals(req.imageUrl())) {
+            tryDeleteOldImage(oldImage);
+        }
     }
 
     @Override
     public void deleteDish(String authorization, Long id) {
         ensureDishOperator(authorization);
         dishMapper.deleteDish(id);
+        opLogService.log("EMPLOYEE", null, "DISH", "DELETE", "删除菜品: ID=" + id);
     }
 
     @Override
@@ -105,5 +133,16 @@ public class DishServiceImpl implements DishService {
 
     private void ensureDishOperator(String authorization) {
         merchantAuthGuard.requireEmployeeRole(authorization, "SUPER_ADMIN", "SHOP_MANAGER", "STAFF");
+    }
+
+    private void tryDeleteOldImage(String imageUrl) {
+        try {
+            String filename = imageUrl.contains("/") ? imageUrl.substring(imageUrl.lastIndexOf('/') + 1) : imageUrl;
+            if (!StringUtils.hasText(filename)) return;
+            Path filePath = Paths.get(uploadDir).toAbsolutePath().normalize().resolve(filename);
+            Files.deleteIfExists(filePath);
+        } catch (Exception e) {
+            log.warn("旧图片清理失败: {}, 原因: {}", imageUrl, e.getMessage());
+        }
     }
 }

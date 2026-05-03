@@ -7,6 +7,17 @@ const U_PROFILE_KEY = 'ysh_user_profile'
 const M_PROFILE_KEY = 'ysh_merchant_profile'
 const R_PROFILE_KEY = 'ysh_rider_profile'
 
+const HTTP_STATUS_MAP = {
+  400: '请求参数错误',
+  403: '没有访问权限',
+  404: '请求的资源不存在',
+  409: '数据冲突，请刷新后重试',
+  422: '请求无法处理',
+  500: '服务器内部错误，请稍后重试',
+  502: '服务暂时不可用',
+  503: '服务维护中，请稍后重试',
+}
+
 function handleUnauthorized() {
   const p = window.location.pathname || ''
   if (p.startsWith('/merchant')) {
@@ -44,19 +55,26 @@ instance.interceptors.response.use(
       if (body.code === 401) {
         handleUnauthorized()
       }
-      return Promise.reject(new Error(body.msg || '请求失败'))
+      return Promise.reject(new Error(body.msg || HTTP_STATUS_MAP[body.code] || '请求失败'))
     }
     return res
   },
   (err) => {
-    if (err.response?.status === 401) {
+    if (err.code === 'ECONNABORTED') {
+      return Promise.reject(new Error('请求超时，请检查网络后重试'))
+    }
+    if (!err.response) {
+      return Promise.reject(new Error('网络连接失败，请检查网络设置'))
+    }
+    const status = err.response.status
+    if (status === 401) {
       handleUnauthorized()
     }
     const data = err.response?.data
     const msg =
       (typeof data === 'object' && data?.msg) ||
+      HTTP_STATUS_MAP[status] ||
       err.response?.statusText ||
-      err.message ||
       '网络错误'
     return Promise.reject(new Error(msg))
   }

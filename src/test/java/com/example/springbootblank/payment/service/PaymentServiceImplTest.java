@@ -2,6 +2,9 @@ package com.example.springbootblank.payment.service;
 
 import com.example.springbootblank.auth.security.JwtService;
 import com.example.springbootblank.common.error.BusinessException;
+import com.example.springbootblank.dish.mapper.DishMapper;
+import com.example.springbootblank.log.service.OpLogService;
+import com.example.springbootblank.order.entity.OrderItem;
 import com.example.springbootblank.order.mapper.OrderMapper;
 import com.example.springbootblank.payment.dto.PaymentMockSuccessRequest;
 import com.example.springbootblank.payment.mapper.PaymentMapper;
@@ -11,10 +14,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,6 +33,10 @@ class PaymentServiceImplTest {
     private PaymentMapper paymentMapper;
     @Mock
     private OrderMapper orderMapper;
+    @Mock
+    private DishMapper dishMapper;
+    @Mock
+    private OpLogService opLogService;
 
     @InjectMocks
     private PaymentServiceImpl paymentService;
@@ -88,7 +97,7 @@ class PaymentServiceImplTest {
     }
 
     @Test
-    void mockSuccessShouldUpdatePaymentAndOrder() {
+    void mockSuccessShouldUpdatePaymentAndOrderAndDeductStock() {
         when(paymentMapper.findPaymentByNo("P104")).thenReturn(Map.of(
                 "orderId", 3004L,
                 "payStatus", 0
@@ -96,10 +105,40 @@ class PaymentServiceImplTest {
         when(paymentMapper.markPaymentSuccess("P104")).thenReturn(1);
         when(orderMapper.updateOrderPaySuccess(3004L)).thenReturn(1);
 
+        OrderItem item = new OrderItem();
+        item.setDishId(10L);
+        item.setDishName("宫保鸡丁");
+        item.setQuantity(2);
+        when(orderMapper.listOrderItems(3004L)).thenReturn(List.of(item));
+        when(dishMapper.deductStock(10L, 2)).thenReturn(1);
+
         paymentService.mockSuccess(new PaymentMockSuccessRequest("P104"));
 
         verify(paymentMapper).markPaymentSuccess("P104");
         verify(orderMapper).updateOrderPaySuccess(3004L);
+        verify(dishMapper).deductStock(10L, 2);
+        verify(opLogService).log(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void mockSuccessShouldThrowWhenStockInsufficient() {
+        when(paymentMapper.findPaymentByNo("P105")).thenReturn(Map.of(
+                "orderId", 3005L,
+                "payStatus", 0
+        ));
+        when(paymentMapper.markPaymentSuccess("P105")).thenReturn(1);
+        when(orderMapper.updateOrderPaySuccess(3005L)).thenReturn(1);
+
+        OrderItem item = new OrderItem();
+        item.setDishId(20L);
+        item.setDishName("红烧肉");
+        item.setQuantity(5);
+        when(orderMapper.listOrderItems(3005L)).thenReturn(List.of(item));
+        when(dishMapper.deductStock(20L, 5)).thenReturn(0);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> paymentService.mockSuccess(new PaymentMockSuccessRequest("P105")));
+        assertEquals(400, ex.getCode());
     }
 }
 

@@ -91,7 +91,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useToast } from '@/composables/useToast'
 import request from '@/api/request'
+
+const toast = useToast()
 
 const auth = useAuthStore()
 const loading = ref(false)
@@ -145,7 +148,7 @@ async function cancelOrder(orderId) {
     })
     await loadOrders()
   } catch (e) {
-    alert(e.message || '取消失败')
+    toast.error(e.message || '取消失败')
   }
 }
 
@@ -160,10 +163,10 @@ async function createPayment(orderId) {
     const paymentNo = res.data.data?.paymentNo
     if (paymentNo) {
       paymentNoMap.value = { ...paymentNoMap.value, [orderId]: paymentNo }
-      alert(`支付单创建成功：${paymentNo}`)
+      toast.success(`支付单创建成功：${paymentNo}`)
     }
   } catch (e) {
-    alert(e.message || '创建支付单失败')
+    toast.error(e.message || '创建支付单失败')
   }
 }
 
@@ -175,7 +178,7 @@ async function mockPaySuccess(paymentNo, orderId) {
     await loadOrders()
     await queryPayStatus(paymentNo)
   } catch (e) {
-    alert(e.message || '模拟支付失败')
+    toast.error(e.message || '模拟支付失败')
   }
 }
 
@@ -185,9 +188,9 @@ async function queryPayStatus(paymentNo) {
       headers: { Authorization: `Bearer ${auth.userToken}` },
     })
     const payStatus = res.data.data?.payStatus
-    alert(`支付状态：${payStatusText(payStatus)}`)
+    toast.info(`支付状态：${payStatusText(payStatus)}`)
   } catch (e) {
-    alert(e.message || '查询支付状态失败')
+    toast.error(e.message || '查询支付状态失败')
   }
 }
 

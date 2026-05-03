@@ -10,6 +10,7 @@ import com.example.springbootblank.auth.security.JwtService;
 import com.example.springbootblank.common.error.BusinessException;
 import com.example.springbootblank.common.error.UnauthorizedException;
 import com.example.springbootblank.employee.entity.Employee;
+import com.example.springbootblank.log.service.OpLogService;
 import com.example.springbootblank.rider.entity.Rider;
 import io.jsonwebtoken.JwtException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -25,11 +26,14 @@ public class AuthServiceImpl implements AuthService {
     private final AuthMapper authMapper;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final OpLogService opLogService;
 
-    public AuthServiceImpl(AuthMapper authMapper, BCryptPasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthServiceImpl(AuthMapper authMapper, BCryptPasswordEncoder passwordEncoder,
+                           JwtService jwtService, OpLogService opLogService) {
         this.authMapper = authMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.opLogService = opLogService;
     }
 
     @Override
@@ -69,6 +73,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String token = jwtService.createUserToken(user.getId(), user.getUsername());
+        opLogService.log("USER", user.getId(), "AUTH", "LOGIN", "用户登录: " + user.getUsername());
+
         Map<String, Object> userInfo = new HashMap<>();
         userInfo.put("id", user.getId());
         userInfo.put("username", user.getUsername());
@@ -99,6 +105,8 @@ public class AuthServiceImpl implements AuthService {
                 employee.getUsername(),
                 employee.getRoleCode()
         );
+        opLogService.log("EMPLOYEE", employee.getId(), "AUTH", "LOGIN", "商家登录: " + employee.getUsername());
+
         Map<String, Object> employeeInfo = new HashMap<>();
         employeeInfo.put("id", employee.getId());
         employeeInfo.put("username", employee.getUsername());
@@ -145,6 +153,8 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("用户名或密码错误");
         }
         String token = jwtService.createRiderToken(rider.getId(), rider.getUsername());
+        opLogService.log("RIDER", rider.getId(), "AUTH", "LOGIN", "骑手登录: " + rider.getUsername());
+
         Map<String, Object> riderInfo = new HashMap<>();
         riderInfo.put("id", rider.getId());
         riderInfo.put("username", rider.getUsername());

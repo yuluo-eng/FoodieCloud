@@ -89,12 +89,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useToast } from '@/composables/useToast'
 import request from '@/api/request'
 import UserOrdersView from './UserOrdersView.vue'
 import MenuBoard from '@/components/menu/MenuBoard.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
+const toast = useToast()
 const showCart = ref(false)
 const activeView = ref('dishes')
 const selectedCategory = ref(null)
@@ -301,12 +303,12 @@ async function checkout() {
       { shopId: 1, remark: '' },
       { headers: { Authorization: `Bearer ${auth.userToken}` } }
     )
-    alert('下单成功！订单号：' + res.data.data.orderNo)
+    toast.success('下单成功！订单号：' + res.data.data.orderNo)
     cartItems.value = []
     showCart.value = false
   } catch (err) {
     console.error('下单失败', err)
-    alert('下单失败，请重试')
+    toast.error('下单失败，请重试')
   }
 }
 
@@ -326,10 +328,13 @@ function logout() {
   background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
   color: white;
   padding: 15px 30px;
+  padding-top: calc(15px + env(safe-area-inset-top));
   display: flex;
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .nav-left h1 {
@@ -576,11 +581,12 @@ function logout() {
 .item-controls button {
   background: #f0f0f0;
   border: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
+  touch-action: manipulation;
 }
 
 .btn-remove {
@@ -625,5 +631,29 @@ function logout() {
 
 .btn-checkout:hover {
   transform: translateY(-2px);
+}
+
+.cart-items {
+  -webkit-overflow-scrolling: touch;
+}
+
+.cart-footer {
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+}
+
+@media (max-width: 640px) {
+  .top-nav {
+    padding: 12px 14px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+  }
+  .nav-left h1 { font-size: 18px; }
+  .nav-right { gap: 8px; flex-wrap: wrap; }
+  .identity { padding: 4px 8px; font-size: 12px; }
+  .identity-name { max-width: 80px; }
+  .identity-tag { display: none; }
+  .user-content { padding: 16px 10px; }
+  .dishes-section h2 { font-size: 18px; }
+  .cart-panel { max-width: 100%; }
+  .btn-cart, .btn-logout { padding: 8px 10px; font-size: 13px; }
 }
 </style>

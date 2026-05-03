@@ -63,10 +63,12 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useToast } from '@/composables/useToast'
 import request from '@/api/request'
 
 const router = useRouter()
 const auth = useAuthStore()
+const toast = useToast()
 const loading = ref(false)
 const orders = ref([])
 const statusFilter = ref(-1)
@@ -141,10 +143,10 @@ async function action(url, msg) {
     await request.patch(url, {}, {
       headers: { Authorization: `Bearer ${auth.merchantToken}` },
     })
-    alert(msg)
+    toast.success(msg)
     await loadOrders()
   } catch (e) {
-    alert(e.message || '操作失败')
+    toast.error(e.message || '操作失败')
   }
 }
 
@@ -265,5 +267,11 @@ function formatMoney(v) {
   gap: 10px;
   padding: 6px 0;
   border-bottom: 1px dashed #e5e7eb;
+}
+
+@media (max-width: 640px) {
+  .orders-wrap { padding: 12px; }
+  .actions { flex-wrap: wrap; }
+  .actions .btn { flex: 1; min-width: 0; text-align: center; }
 }
 </style>

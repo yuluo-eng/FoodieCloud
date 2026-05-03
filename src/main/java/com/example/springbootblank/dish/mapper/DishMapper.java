@@ -31,4 +31,8 @@ public interface DishMapper {
 
     List<Dish> listUserDishes(@Param("shopId") Long shopId,
                               @Param("categoryId") Long categoryId);
+
+    Dish findById(@Param("id") Long id);
+
+    int deductStock(@Param("dishId") Long dishId, @Param("quantity") int quantity);
 }

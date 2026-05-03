@@ -1,11 +1,14 @@
 package com.example.springbootblank.order.service;
 
 import com.example.springbootblank.auth.security.JwtService;
+import com.example.springbootblank.auth.security.MerchantAuthGuard;
 import com.example.springbootblank.cart.mapper.CartMapper;
 import com.example.springbootblank.common.error.BusinessException;
+import com.example.springbootblank.log.service.OpLogService;
 import com.example.springbootblank.order.dto.OrderCreateRequest;
 import com.example.springbootblank.order.entity.Order;
 import com.example.springbootblank.order.mapper.OrderMapper;
+import com.example.springbootblank.rider.mapper.RiderMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -35,6 +38,12 @@ class OrderServiceImplTest {
     private CartMapper cartMapper;
     @Mock
     private OrderMapper orderMapper;
+    @Mock
+    private RiderMapper riderMapper;
+    @Mock
+    private MerchantAuthGuard merchantAuthGuard;
+    @Mock
+    private OpLogService opLogService;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -96,6 +105,34 @@ class OrderServiceImplTest {
         verify(orderMapper).insertOrder(any(Order.class));
         verify(orderMapper).insertOrderItem(any());
         verify(cartMapper).clearSelectedCart(1001L);
+    }
+
+    @Test
+    void acceptOrderShouldSucceedAndLog() {
+        when(merchantAuthGuard.resolveShopId("Bearer emp")).thenReturn(1L);
+        Order o = new Order();
+        o.setId(500L);
+        o.setShopId(1L);
+        when(orderMapper.findOrderById(500L)).thenReturn(o);
+        when(orderMapper.updateOrderStatusMerchant(500L, 1, 2)).thenReturn(1);
+
+        orderService.acceptOrder("Bearer emp", 500L);
+
+        verify(orderMapper).updateOrderStatusMerchant(500L, 1, 2);
+        verify(opLogService).log(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void acceptOrderShouldThrowWhenShopMismatch() {
+        when(merchantAuthGuard.resolveShopId("Bearer emp")).thenReturn(1L);
+        Order o = new Order();
+        o.setId(500L);
+        o.setShopId(99L);
+        when(orderMapper.findOrderById(500L)).thenReturn(o);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> orderService.acceptOrder("Bearer emp", 500L));
+        assertEquals(403, ex.getCode());
     }
 }
 

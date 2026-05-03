@@ -3,32 +3,46 @@ package com.example.springbootblank.payment.service;
 import com.example.springbootblank.auth.security.JwtService;
 import com.example.springbootblank.common.error.BusinessException;
 import com.example.springbootblank.common.error.UnauthorizedException;
+import com.example.springbootblank.dish.mapper.DishMapper;
+import com.example.springbootblank.log.service.OpLogService;
 import com.example.springbootblank.order.entity.Order;
+import com.example.springbootblank.order.entity.OrderItem;
 import com.example.springbootblank.order.mapper.OrderMapper;
 import com.example.springbootblank.payment.dto.PaymentCreateRequest;
 import com.example.springbootblank.payment.dto.PaymentMockSuccessRequest;
 import com.example.springbootblank.payment.entity.PaymentRecord;
 import com.example.springbootblank.payment.mapper.PaymentMapper;
 import io.jsonwebtoken.JwtException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 
 @Service
 public class PaymentServiceImpl implements PaymentService {
 
+    private static final Logger log = LoggerFactory.getLogger(PaymentServiceImpl.class);
+
     private final JwtService jwtService;
     private final PaymentMapper paymentMapper;
     private final OrderMapper orderMapper;
+    private final DishMapper dishMapper;
+    private final OpLogService opLogService;
 
-    public PaymentServiceImpl(JwtService jwtService, PaymentMapper paymentMapper, OrderMapper orderMapper) {
+    public PaymentServiceImpl(JwtService jwtService, PaymentMapper paymentMapper,
+                              OrderMapper orderMapper, DishMapper dishMapper,
+                              OpLogService opLogService) {
         this.jwtService = jwtService;
         this.paymentMapper = paymentMapper;
         this.orderMapper = orderMapper;
+        this.dishMapper = dishMapper;
+        this.opLogService = opLogService;
     }
 
     @Override
@@ -80,6 +94,17 @@ public class PaymentServiceImpl implements PaymentService {
         if (orderRows == 0) {
             throw new BusinessException(409, "订单状态已变化，请刷新后重试");
         }
+
+        List<OrderItem> items = orderMapper.listOrderItems(orderId);
+        for (OrderItem item : items) {
+            int deducted = dishMapper.deductStock(item.getDishId(), item.getQuantity());
+            if (deducted == 0) {
+                throw new BusinessException(400, "菜品「" + item.getDishName() + "」库存不足");
+            }
+        }
+
+        opLogService.log("USER", null, "PAYMENT", "PAY_SUCCESS",
+                "支付成功: " + req.paymentNo() + ", 订单ID: " + orderId);
     }
 
     @Override

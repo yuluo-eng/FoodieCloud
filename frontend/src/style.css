@@ -159,3 +159,64 @@ button {
   margin: 0 0 1.5rem;
   font-size: 0.95rem;
 }
+
+/* ─── Mobile / Touch ─── */
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  overscroll-behavior-y: contain;
+}
+
+button, a, select, [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.btn {
+  min-height: 44px;
+}
+
+@media (max-width: 640px) {
+  .page-shell {
+    padding: 1rem 0.75rem 2rem;
+  }
+  .page-title {
+    font-size: 1.35rem;
+  }
+}
+
+/* Smooth momentum scrolling */
+.scroll-y {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Loading skeleton pulse */
+@keyframes skeleton-pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0.6; }
+}
+.skeleton {
+  background: var(--border);
+  border-radius: 8px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* Spinner for weak-network loading */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
