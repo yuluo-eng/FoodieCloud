@@ -31,6 +31,11 @@
                remark,
                status,
                pay_status AS payStatus,
+               rider_id AS riderId,
+               rider_accept_time AS riderAcceptTime,
+               rider_arrive_shop_time AS riderArriveShopTime,
+               rider_pickup_time AS riderPickupTime,
+               rider_delivered_time AS riderDeliveredTime,
                pay_time AS payTime,
                finish_time AS finishTime,
                cancel_time AS cancelTime,
@@ -54,6 +59,11 @@
                remark,
                status,
                pay_status AS payStatus,
+               rider_id AS riderId,
+               rider_accept_time AS riderAcceptTime,
+               rider_arrive_shop_time AS riderArriveShopTime,
+               rider_pickup_time AS riderPickupTime,
+               rider_delivered_time AS riderDeliveredTime,
                pay_time AS payTime,
                finish_time AS finishTime,
                cancel_time AS cancelTime,
@@ -204,28 +214,32 @@
     </select>
 
     <select id="listDispatchOrders" resultType="com.example.springbootblank.order.entity.Order">
-        SELECT id,
-               order_no AS orderNo,
-               user_id AS userId,
-               shop_id AS shopId,
-               total_amount AS totalAmount,
-               remark,
-               status,
-               pay_status AS payStatus,
-               rider_id AS riderId,
-               rider_accept_time AS riderAcceptTime,
-               rider_arrive_shop_time AS riderArriveShopTime,
-               rider_pickup_time AS riderPickupTime,
-               rider_delivered_time AS riderDeliveredTime,
-               pay_time AS payTime,
-               finish_time AS finishTime,
-               cancel_time AS cancelTime,
-               create_time AS createTime,
-               update_time AS updateTime
-        FROM orders
-        WHERE status = 1
-          AND rider_id IS NULL
-        ORDER BY id ASC
+        SELECT o.id,
+               o.order_no AS orderNo,
+               o.user_id AS userId,
+               o.shop_id AS shopId,
+               o.total_amount AS totalAmount,
+               o.remark,
+               o.status,
+               o.pay_status AS payStatus,
+               o.rider_id AS riderId,
+               o.rider_accept_time AS riderAcceptTime,
+               o.rider_arrive_shop_time AS riderArriveShopTime,
+               o.rider_pickup_time AS riderPickupTime,
+               o.rider_delivered_time AS riderDeliveredTime,
+               o.pay_time AS payTime,
+               o.finish_time AS finishTime,
+               o.cancel_time AS cancelTime,
+               o.create_time AS createTime,
+               o.update_time AS updateTime,
+               u.shipping_address AS shippingAddress,
+               (SELECT GROUP_CONCAT(oi.dish_name SEPARATOR '、')
+                FROM order_item oi WHERE oi.order_id = o.id) AS dishSummary
+        FROM orders o
+        LEFT JOIN user u ON u.id = o.user_id
+        WHERE o.status = 1
+          AND o.rider_id IS NULL
+        ORDER BY o.id ASC
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
@@ -240,28 +254,32 @@
     </update>
 
     <select id="listRiderCurrentOrders" resultType="com.example.springbootblank.order.entity.Order">
-        SELECT id,
-               order_no AS orderNo,
-               user_id AS userId,
-               shop_id AS shopId,
-               total_amount AS totalAmount,
-               remark,
-               status,
-               pay_status AS payStatus,
-               rider_id AS riderId,
-               rider_accept_time AS riderAcceptTime,
-               rider_arrive_shop_time AS riderArriveShopTime,
-               rider_pickup_time AS riderPickupTime,
-               rider_delivered_time AS riderDeliveredTime,
-               pay_time AS payTime,
-               finish_time AS finishTime,
-               cancel_time AS cancelTime,
-               create_time AS createTime,
-               update_time AS updateTime
-        FROM orders
-        WHERE rider_id = #{riderId}
-          AND status IN (2, 3, 4)
-        ORDER BY id DESC
+        SELECT o.id,
+               o.order_no AS orderNo,
+               o.user_id AS userId,
+               o.shop_id AS shopId,
+               o.total_amount AS totalAmount,
+               o.remark,
+               o.status,
+               o.pay_status AS payStatus,
+               o.rider_id AS riderId,
+               o.rider_accept_time AS riderAcceptTime,
+               o.rider_arrive_shop_time AS riderArriveShopTime,
+               o.rider_pickup_time AS riderPickupTime,
+               o.rider_delivered_time AS riderDeliveredTime,
+               o.pay_time AS payTime,
+               o.finish_time AS finishTime,
+               o.cancel_time AS cancelTime,
+               o.create_time AS createTime,
+               o.update_time AS updateTime,
+               u.shipping_address AS shippingAddress,
+               (SELECT GROUP_CONCAT(oi.dish_name SEPARATOR '、')
+                FROM order_item oi WHERE oi.order_id = o.id) AS dishSummary
+        FROM orders o
+        LEFT JOIN user u ON u.id = o.user_id
+        WHERE o.rider_id = #{riderId}
+          AND o.status IN (2, 3, 4)
+        ORDER BY o.id DESC
     </select>
 
     <update id="riderArriveShop">
@@ -293,5 +311,42 @@
           AND status = 3
           AND rider_pickup_time IS NOT NULL
     </update>
+
+    <select id="countRiderHistoryOrders" resultType="long">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE rider_id = #{riderId}
+          AND status = 4
+    </select>
+
+    <select id="listRiderHistoryOrders" resultType="com.example.springbootblank.order.entity.Order">
+        SELECT o.id,
+               o.order_no AS orderNo,
+               o.user_id AS userId,
+               o.shop_id AS shopId,
+               o.total_amount AS totalAmount,
+               o.remark,
+               o.status,
+               o.pay_status AS payStatus,
+               o.rider_id AS riderId,
+               o.rider_accept_time AS riderAcceptTime,
+               o.rider_arrive_shop_time AS riderArriveShopTime,
+               o.rider_pickup_time AS riderPickupTime,
+               o.rider_delivered_time AS riderDeliveredTime,
+               o.pay_time AS payTime,
+               o.finish_time AS finishTime,
+               o.cancel_time AS cancelTime,
+               o.create_time AS createTime,
+               o.update_time AS updateTime,
+               u.shipping_address AS shippingAddress,
+               (SELECT GROUP_CONCAT(oi.dish_name SEPARATOR '、')
+                FROM order_item oi WHERE oi.order_id = o.id) AS dishSummary
+        FROM orders o
+        LEFT JOIN user u ON u.id = o.user_id
+        WHERE o.rider_id = #{riderId}
+          AND o.status = 4
+        ORDER BY o.rider_delivered_time DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
 
 </mapper>

@@ -48,3 +48,10 @@ export function riderDelivered(token, orderId) {
     headers: { Authorization: `Bearer ${token}` },
   })
 }
+
+export function fetchHistoryOrders(token, params = {}) {
+  return request.get('/rider/orders/history', {
+    params,
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}

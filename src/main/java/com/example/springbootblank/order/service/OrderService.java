@@ -35,4 +35,6 @@ public interface OrderService {
     void riderPickup(String authorization, Long orderId);
 
     void riderDelivered(String authorization, Long orderId);
+
+    Map<String, Object> riderHistoryOrders(String authorization, int page, int pageSize);
 }

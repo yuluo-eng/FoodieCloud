@@ -71,4 +71,10 @@ public interface OrderMapper {
     int riderPickup(@Param("orderId") Long orderId, @Param("riderId") Long riderId);
 
     int riderDelivered(@Param("orderId") Long orderId, @Param("riderId") Long riderId);
+
+    long countRiderHistoryOrders(@Param("riderId") Long riderId);
+
+    List<Order> listRiderHistoryOrders(@Param("riderId") Long riderId,
+                                       @Param("offset") int offset,
+                                       @Param("pageSize") int pageSize);
 }

@@ -623,7 +623,39 @@ JWT 身份类型（`type`）：
 
 - `PATCH /api/rider/orders/{orderId}/delivered`
 
-### 9.10 骑手位置上报（可选增强）
+### 9.10 骑手历史订单
+
+- `GET /api/rider/orders/history?page=1&pageSize=20`
+- `Authorization: Bearer <rider_token>`
+
+说明：返回该骑手已完成（status=4）的历史配送记录，按送达时间倒序。
+
+返回:
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "data": {
+    "records": [
+      {
+        "id": 1001,
+        "orderNo": "YSH202604010001",
+        "totalAmount": 36.00,
+        "shippingAddress": "XX大学3号楼",
+        "dishSummary": "黑椒鸡排饭、可乐",
+        "riderDeliveredTime": "2026-04-01 14:30:00",
+        "createTime": "2026-04-01 13:00:00"
+      }
+    ],
+    "total": 15,
+    "page": 1,
+    "pageSize": 20
+  }
+}
+```
+
+### 9.11 骑手位置上报（可选增强）
 
 - `POST /api/rider/location/report`
 

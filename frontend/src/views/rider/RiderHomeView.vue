@@ -16,8 +16,9 @@
 
     <section class="panel">
       <div class="tabs">
-        <button :class="{ active: tab === 'dispatch' }" @click="tab = 'dispatch'">可接订单</button>
-        <button :class="{ active: tab === 'current' }" @click="tab = 'current'">我的进行中</button>
+        <button :class="{ active: tab === 'dispatch' }" @click="switchTab('dispatch')">可接订单</button>
+        <button :class="{ active: tab === 'current' }" @click="switchTab('current')">我的进行中</button>
+        <button :class="{ active: tab === 'history' }" @click="switchTab('history')">历史记录</button>
       </div>
 
       <div v-if="loading" class="tip">加载中...</div>
@@ -29,16 +30,23 @@
             <span>{{ statusText(order.status) }}</span>
           </div>
           <p>金额：¥{{ formatMoney(order.totalAmount) }}</p>
-          <p>店铺ID：{{ order.shopId }}</p>
-          <div class="actions">
+          <p v-if="order.shippingAddress" class="info-line">📍 {{ order.shippingAddress }}</p>
+          <p v-if="order.createTime" class="info-line">下单：{{ order.createTime }}</p>
+          <p v-if="order.dishSummary" class="info-line dish-summary">{{ order.dishSummary }}</p>
+          <p v-if="tab === 'history' && order.riderDeliveredTime" class="info-line">送达：{{ order.riderDeliveredTime }}</p>
+          <div v-if="tab !== 'history'" class="actions">
             <button v-if="tab === 'dispatch'" class="btn primary" @click="accept(order.id)">接单</button>
             <template v-else>
-              <button v-if="order.status === 2" class="btn" @click="arrive(order.id)">到店</button>
+              <button v-if="order.status === 2 && !order.riderArriveShopTime" class="btn" @click="arrive(order.id)">到店</button>
               <button v-if="order.status === 3 && !order.riderPickupTime" class="btn" @click="pickup(order.id)">取餐</button>
               <button v-if="order.status === 3 && order.riderPickupTime" class="btn success" @click="delivered(order.id)">送达</button>
             </template>
           </div>
         </article>
+      </div>
+
+      <div v-if="tab === 'history' && historyTotal > historyOrders.length" class="load-more">
+        <button class="btn" @click="loadMoreHistory" :disabled="loading">加载更多</button>
       </div>
     </section>
   </div>
@@ -51,6 +59,7 @@ import { useAuthStore } from '@/stores/auth'
 import {
   fetchCurrentOrders,
   fetchDispatchOrders,
+  fetchHistoryOrders,
   riderAcceptOrder,
   riderArriveShop,
   riderDelivered,
@@ -65,9 +74,16 @@ const tab = ref('dispatch')
 const loading = ref(false)
 const dispatchOrders = ref([])
 const currentOrders = ref([])
+const historyOrders = ref([])
+const historyPage = ref(1)
+const historyTotal = ref(0)
 const workStatus = ref(auth.riderProfile?.workStatus || 'ONLINE')
 
-const activeList = computed(() => (tab.value === 'dispatch' ? dispatchOrders.value : currentOrders.value))
+const activeList = computed(() => {
+  if (tab.value === 'dispatch') return dispatchOrders.value
+  if (tab.value === 'current') return currentOrders.value
+  return historyOrders.value
+})
 
 onMounted(async () => {
   await syncRiderProfile()
@@ -97,6 +113,36 @@ async function loadData() {
     console.error('加载骑手订单失败', e)
   } finally {
     loading.value = false
+  }
+}
+
+async function loadHistory(page = 1) {
+  loading.value = true
+  try {
+    const res = await fetchHistoryOrders(auth.riderToken, { page, pageSize: 20 })
+    const data = res.data.data || {}
+    if (page === 1) {
+      historyOrders.value = data.records || []
+    } else {
+      historyOrders.value = [...historyOrders.value, ...(data.records || [])]
+    }
+    historyTotal.value = data.total || 0
+    historyPage.value = page
+  } catch (e) {
+    console.error('加载历史订单失败', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadMoreHistory() {
+  await loadHistory(historyPage.value + 1)
+}
+
+function switchTab(newTab) {
+  tab.value = newTab
+  if (newTab === 'history' && historyOrders.value.length === 0) {
+    loadHistory(1)
   }
 }
 
@@ -160,7 +206,7 @@ function statusText(status) {
   return {
     1: '待接单',
     2: '已接单',
-    3: '已到店',
+    3: '配送中',
     4: '已送达',
   }[status] || `状态${status}`
 }
@@ -185,8 +231,11 @@ function formatMoney(v) {
 .card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; }
 .head { display: flex; justify-content: space-between; align-items: center; }
 .head p { margin: 0; font-weight: 600; }
+.info-line { margin: 4px 0 0; color: #64748b; font-size: 13px; }
+.dish-summary { color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .actions { display: flex; gap: 8px; margin-top: 6px; }
 .btn.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
 .btn.success { background: #16a34a; color: #fff; border-color: #16a34a; }
 .tip { color: #64748b; }
+.load-more { text-align: center; margin-top: 12px; }
 </style>

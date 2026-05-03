@@ -73,4 +73,13 @@ public class RiderOrderController {
         orderService.riderDelivered(authorization, orderId);
         return ApiResponse.ok();
     }
+
+    @GetMapping("/history")
+    public ApiResponse<Map<String, Object>> history(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize
+    ) {
+        return ApiResponse.ok(orderService.riderHistoryOrders(authorization, page, pageSize));
+    }
 }
