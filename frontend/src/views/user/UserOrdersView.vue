@@ -21,6 +21,10 @@
           </div>
         </header>
 
+        <div v-if="deliveryProgress(order)" class="delivery-progress">
+          {{ deliveryProgress(order) }}
+        </div>
+
         <div class="card-body">
           <p>金额：<b>¥{{ formatMoney(order.totalAmount) }}</b></p>
           <p v-if="order.remark">备注：{{ order.remark }}</p>
@@ -210,6 +214,14 @@ function payStatusText(status) {
   }[status] || '未知'
 }
 
+function deliveryProgress(order) {
+  if (order.status === 2) return '🚴 骑手已接单，正在前往商家'
+  if (order.status === 3 && !order.riderPickupTime) return '🏪 骑手已到店，等待取餐'
+  if (order.status === 3 && order.riderPickupTime) return '🛵 配送中'
+  if (order.status === 4) return '✅ 已送达'
+  return ''
+}
+
 function formatMoney(v) {
   const n = Number(v || 0)
   return n.toFixed(2)
@@ -310,6 +322,15 @@ function formatMoney(v) {
   grid-template-columns: 1fr auto auto;
   gap: 12px;
   padding: 6px 0;
+}
+.delivery-progress {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #f0fdf4;
+  border-radius: 6px;
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 500;
 }
 .tip { color: #888; }
 </style>

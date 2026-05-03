@@ -22,6 +22,8 @@ public class Order {
     private LocalDateTime cancelTime;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    private String shippingAddress;
+    private String dishSummary;
 
     public Long getId() {
         return id;
@@ -165,5 +167,21 @@ public class Order {
 
     public void setUpdateTime(LocalDateTime updateTime) {
         this.updateTime = updateTime;
+    }
+
+    public String getShippingAddress() {
+        return shippingAddress;
+    }
+
+    public void setShippingAddress(String shippingAddress) {
+        this.shippingAddress = shippingAddress;
+    }
+
+    public String getDishSummary() {
+        return dishSummary;
+    }
+
+    public void setDishSummary(String dishSummary) {
+        this.dishSummary = dishSummary;
     }
 }

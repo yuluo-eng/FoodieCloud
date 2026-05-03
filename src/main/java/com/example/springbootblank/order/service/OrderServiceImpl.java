@@ -290,6 +290,22 @@ public class OrderServiceImpl implements OrderService {
         );
     }
 
+    @Override
+    public Map<String, Object> riderHistoryOrders(String authorization, int page, int pageSize) {
+        Long riderId = resolveRiderId(authorization);
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.max(pageSize, 1);
+        int offset = (safePage - 1) * safeSize;
+        long total = orderMapper.countRiderHistoryOrders(riderId);
+        List<Order> records = orderMapper.listRiderHistoryOrders(riderId, offset, safeSize);
+        return Map.of(
+                "page", safePage,
+                "pageSize", safeSize,
+                "total", total,
+                "records", records
+        );
+    }
+
     private void applyMerchantStatusTransition(
             Long orderId,
             int fromStatus,
