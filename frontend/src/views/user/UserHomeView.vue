@@ -2,7 +2,8 @@
   <div class="user-home">
     <nav class="top-nav">
       <div class="nav-left">
-        <h1>🍽️ 悦食汇</h1>
+        <RouterLink to="/user" class="back-link">← 返回</RouterLink>
+        <h1>🍽️ {{ shopInfo?.shopName || '悦食汇' }}</h1>
       </div>
       <div class="nav-right">
         <RouterLink v-if="auth.userDisplayLabel" class="identity identity-link" to="/user/profile" title="个人资料">
@@ -20,7 +21,6 @@
 
     <div class="user-content">
       <div class="dishes-section">
-        <h2>菜品列表</h2>
         <div class="section-switch">
           <button :class="{ active: activeView === 'dishes' }" @click="activeView = 'dishes'">点餐</button>
           <button :class="{ active: activeView === 'orders' }" @click="activeView = 'orders'">我的订单</button>
@@ -87,13 +87,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
+import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import request from '@/api/request'
 import UserOrdersView from './UserOrdersView.vue'
 import MenuBoard from '@/components/menu/MenuBoard.vue'
 
+const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const toast = useToast()
@@ -104,6 +105,8 @@ const dishes = ref([])
 const cartItems = ref([])
 const categories = ref([])
 const loadError = ref('')
+const currentShopId = computed(() => Number(route.params.shopId) || null)
+const shopInfo = ref(null)
 
 const categoryTabs = computed(() =>
   categories.value.map((c) => ({ ...c, active: true }))
@@ -130,17 +133,26 @@ onMounted(async () => {
     console.error('同步用户信息失败', e)
   }
 
+  const shopId = currentShopId.value
+  if (!shopId) {
+    loadError.value = '未选择店铺'
+    return
+  }
+
   try {
     loadError.value = ''
-    const res = await request.get('/user/dishes', {
-      params: { shopId: 1 },
-      headers: { Authorization: `Bearer ${auth.userToken}` },
-    })
-    dishes.value = res.data.data || []
+    const [dishRes, catRes, shopRes] = await Promise.all([
+      request.get('/user/dishes', {
+        params: { shopId },
+        headers: { Authorization: `Bearer ${auth.userToken}` },
+      }),
+      request.get('/user/categories', { params: { shopId } }),
+      request.get('/user/shops'),
+    ])
+    dishes.value = dishRes.data.data || []
+    const allShops = shopRes.data.data || []
+    shopInfo.value = allShops.find(s => s.id === shopId) || null
 
-    const catRes = await request.get('/user/categories', {
-      params: { shopId: 1 },
-    })
     const remoteCategories = (catRes.data.data || [])
       .filter(c => Number(c.status) === 1)
       .map(c => {
@@ -296,20 +308,14 @@ async function updateCart(dishId, quantity) {
   }
 }
 
-async function checkout() {
-  try {
-    const res = await request.post(
-      '/user/orders',
-      { shopId: 1, remark: '' },
-      { headers: { Authorization: `Bearer ${auth.userToken}` } }
-    )
-    toast.success('下单成功！订单号：' + res.data.data.orderNo)
-    cartItems.value = []
-    showCart.value = false
-  } catch (err) {
-    console.error('下单失败', err)
-    toast.error('下单失败，请重试')
+function checkout() {
+  const selected = cartItems.value.filter((item) => item.selected === 1)
+  if (selected.length === 0) {
+    toast.warn('请先选择要结算的商品')
+    return
   }
+  showCart.value = false
+  router.push({ path: '/user/order-confirm', query: { shopId: currentShopId.value } })
 }
 
 function logout() {
@@ -437,10 +443,12 @@ function logout() {
   padding: 30px 20px;
 }
 
-.dishes-section h2 {
-  font-size: 24px;
-  color: #333;
-  margin-bottom: 12px;
+.back-link {
+  color: #ff6b35;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-right: 8px;
 }
 
 .section-switch {

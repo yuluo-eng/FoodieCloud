@@ -72,7 +72,7 @@ onMounted(async () => {
 async function loadEmployees() {
   try {
     const res = await request.get('/merchant/employees', {
-      params: { page: 1, pageSize: 100, shopId: 1 },
+      params: { page: 1, pageSize: 100, shopId: auth.merchantProfile?.shopId },
       headers: { Authorization: `Bearer ${auth.merchantToken}` },
     })
     employees.value = res.data.data?.records || []
@@ -88,7 +88,7 @@ async function addEmployee() {
       {
         ...form.value,
         roleId: Number(form.value.roleId),
-        shopId: 1,
+        shopId: auth.merchantProfile?.shopId,
         enabled: 1,
       },
       { headers: { Authorization: `Bearer ${auth.merchantToken}` } }

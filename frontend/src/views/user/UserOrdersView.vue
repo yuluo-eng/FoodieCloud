@@ -26,6 +26,20 @@
           <p v-if="order.remark">备注：{{ order.remark }}</p>
         </div>
 
+        <div v-if="order.riderId && order.status >= 2 && order.status <= 4" class="delivery-section">
+          <div class="rider-info">
+            <span class="rider-label">🚴 骑手：</span>
+            <span>{{ order.riderName || '未知' }}</span>
+            <a v-if="order.riderPhone" :href="'tel:' + order.riderPhone" class="phone-link">{{ order.riderPhone }}</a>
+          </div>
+          <div class="progress-bar">
+            <div class="step" :class="{ done: order.riderAcceptTime }"><span class="dot"></span><span>已接单</span></div>
+            <div class="step" :class="{ done: order.riderArriveShopTime }"><span class="dot"></span><span>已到店</span></div>
+            <div class="step" :class="{ done: order.riderPickupTime }"><span class="dot"></span><span>已取餐</span></div>
+            <div class="step" :class="{ done: order.riderDeliveredTime }"><span class="dot"></span><span>已送达</span></div>
+          </div>
+        </div>
+
         <footer class="card-actions">
           <button class="btn" @click="toggleDetail(order.id)">
             {{ detailMap[order.id] ? '收起明细' : '查看明细' }}
@@ -315,4 +329,59 @@ function formatMoney(v) {
   padding: 6px 0;
 }
 .tip { color: #888; }
+
+.delivery-section {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #f0f9ff;
+  border-radius: 8px;
+}
+.rider-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+.rider-label { font-weight: 600; }
+.phone-link {
+  color: #2563eb;
+  text-decoration: none;
+  margin-left: auto;
+}
+.progress-bar {
+  display: flex;
+  justify-content: space-between;
+}
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  font-size: 0.78rem;
+  color: #9ca3af;
+  position: relative;
+}
+.step .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d1d5db;
+  transition: background 0.2s;
+}
+.step.done .dot { background: #2563eb; }
+.step.done { color: #2563eb; font-weight: 600; }
+.step + .step::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: #d1d5db;
+  z-index: 0;
+}
+.step.done + .step.done::before,
+.step.done + .step::before { background: #2563eb; }
 </style>

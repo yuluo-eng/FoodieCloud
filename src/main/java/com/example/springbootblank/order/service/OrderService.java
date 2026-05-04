@@ -18,7 +18,7 @@ public interface OrderService {
 
     Map<String, Object> merchantOrderDetail(String authorization, Long shopId, Long orderId);
 
-    void acceptOrder(String authorization, Long orderId);
+    void acceptOrder(String authorization, Long orderId, String deliveryMode);
 
     void deliveryOrder(String authorization, Long orderId);
 

@@ -31,7 +31,8 @@
     </nav>
 
     <div class="main-content">
-      <div v-if="activeTab === 'dashboard'" class="dashboard">
+      <div v-if="!ready" style="padding:40px;text-align:center;color:#94a3b8">加载中…</div>
+      <div v-else-if="activeTab === 'dashboard'" class="dashboard">
         <h2>工作台</h2>
         <div class="stats">
           <div class="stat-card">
@@ -58,6 +59,7 @@
       <ShopSettingsView v-else-if="activeTab === 'shop'" />
 
       <MerchantOrdersView v-else-if="activeTab === 'orders'" />
+
     </div>
   </div>
 </template>
@@ -75,6 +77,7 @@ import MerchantOrdersView from './MerchantOrdersView.vue'
 const router = useRouter()
 const auth = useAuthStore()
 const activeTab = ref('dashboard')
+const ready = ref(false)
 const stats = ref({
   totalOrders: 0,
   totalRevenue: 0,
@@ -90,6 +93,8 @@ onMounted(async () => {
     router.push('/merchant/login')
     return
   }
+
+  ready.value = true
 
   try {
     const statsRes = await request.get('/merchant/dashboard/stats', {

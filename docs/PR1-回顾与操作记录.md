@@ -31,7 +31,7 @@
 
 ### 3. 文档
 
-- `docs/backend-api.md`：补充 JWT 三类身份（USER / EMPLOYEE / RIDER）及 **401 / 403** 区分说明。
+- `docs/后端接口文档.md`：补充 JWT 三类身份（USER / EMPLOYEE / RIDER）及 **401 / 403** 区分说明（现统一见该文件）。
 - `docs/后端接口文档.md`：仍为指向完整文档的入口（若未改则保持「入口 + 主文档」结构）。
 
 ### 4. 测试

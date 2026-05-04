@@ -45,9 +45,10 @@ public class MerchantOrderController {
     @PatchMapping("/{orderId}/accept")
     public ApiResponse<Void> accept(
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @PathVariable Long orderId
+            @PathVariable Long orderId,
+            @RequestParam(defaultValue = "SELF") String deliveryMode
     ) {
-        orderService.acceptOrder(authorization, orderId);
+        orderService.acceptOrder(authorization, orderId, deliveryMode);
         return ApiResponse.ok();
     }
 

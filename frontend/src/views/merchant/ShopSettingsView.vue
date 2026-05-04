@@ -38,6 +38,7 @@ import request from '@/api/request'
 const toast = useToast()
 
 const auth = useAuthStore()
+const shopId = auth.merchantProfile?.shopId
 const form = ref({
   shopName: '',
   address: '',
@@ -50,7 +51,7 @@ onMounted(load)
 
 async function load() {
   try {
-    const res = await request.get('/merchant/shop/1', {
+    const res = await request.get(`/merchant/shop/${shopId}`, {
       headers: { Authorization: `Bearer ${auth.merchantToken}` },
     })
     form.value = {
@@ -65,7 +66,7 @@ async function load() {
 
 async function save() {
   try {
-    await request.put('/merchant/shop/1', {
+    await request.put(`/merchant/shop/${shopId}`, {
       shopName: form.value.shopName,
       address: form.value.address,
       phone: form.value.phone,
@@ -82,7 +83,7 @@ async function save() {
 async function toggleBusiness() {
   const next = form.value.businessStatus === 1 ? 0 : 1
   try {
-    await request.patch('/merchant/shop/1/business-status', {
+    await request.patch(`/merchant/shop/${shopId}/business-status`, {
       businessStatus: next,
     }, {
       headers: { Authorization: `Bearer ${auth.merchantToken}` },

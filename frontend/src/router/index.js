@@ -31,7 +31,31 @@ const router = createRouter({
     {
       path: '/user',
       name: 'user-home',
+      component: () => import('@/views/user/ShopListView.vue'),
+      meta: { requiresUser: true },
+    },
+    {
+      path: '/user/shop/:shopId',
+      name: 'user-shop',
       component: () => import('@/views/user/UserHomeView.vue'),
+      meta: { requiresUser: true },
+    },
+    {
+      path: '/user/order-confirm',
+      name: 'order-confirm',
+      component: () => import('@/views/user/OrderConfirmView.vue'),
+      meta: { requiresUser: true },
+    },
+    {
+      path: '/user/payment/:orderId',
+      name: 'payment',
+      component: () => import('@/views/user/PaymentView.vue'),
+      meta: { requiresUser: true },
+    },
+    {
+      path: '/user/payment-result/:orderId',
+      name: 'payment-result',
+      component: () => import('@/views/user/PaymentResultView.vue'),
       meta: { requiresUser: true },
     },
     {
@@ -63,6 +87,18 @@ const router = createRouter({
       name: 'rider-home',
       component: () => import('@/views/rider/RiderHomeView.vue'),
       meta: { requiresRider: true },
+    },
+    {
+      path: '/admin/login',
+      name: 'admin-login',
+      component: () => import('@/views/admin/AdminLoginView.vue'),
+      meta: { guestOnly: 'admin' },
+    },
+    {
+      path: '/admin',
+      name: 'admin-home',
+      component: () => import('@/views/admin/AdminHomeView.vue'),
+      meta: { requiresAdmin: true },
     },
     {
       path: '/:pathMatch(.*)*',

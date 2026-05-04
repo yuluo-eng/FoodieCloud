@@ -49,7 +49,10 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> createOrder(String authorization, OrderCreateRequest req) {
         Long userId = resolveUserId(authorization);
-        Long shopId = req.shopId() == null ? 1L : req.shopId();
+        if (req.shopId() == null) {
+            throw new BusinessException(400, "shopId 不能为空");
+        }
+        Long shopId = req.shopId();
 
         List<Map<String, Object>> selected = cartMapper.listSelectedCartForOrder(userId);
         if (selected.isEmpty()) {
@@ -178,9 +181,26 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public void acceptOrder(String authorization, Long orderId) {
+    public void acceptOrder(String authorization, Long orderId, String deliveryMode) {
         Long shopId = merchantAuthGuard.resolveShopId(authorization);
         ensureOrderBelongsToShop(orderId, shopId);
+
+        if ("RIDER".equalsIgnoreCase(deliveryMode)) {
+            Order order = orderMapper.findOrderById(orderId);
+            if (order == null) {
+                throw new BusinessException(404, "订单不存在");
+            }
+            if (order.getStatus() != 1) {
+                throw new BusinessException(400, "仅已支付订单可操作");
+            }
+            if (order.getRiderId() != null) {
+                throw new BusinessException(422, "该订单已被骑手接单");
+            }
+            opLogService.log("EMPLOYEE", null, "ORDER", "ACCEPT_RIDER_MODE",
+                    "订单" + orderId + " 商家确认接单并推送至骑手抢单池");
+            return;
+        }
+
         applyMerchantStatusTransition(
                 orderId,
                 1,

@@ -93,9 +93,8 @@ import MenuBoard from '@/components/menu/MenuBoard.vue'
 
 const toast = useToast()
 
-const SHOP_ID = 1
-
 const auth = useAuthStore()
+const SHOP_ID = auth.merchantProfile?.shopId
 const authHeader = () => ({ Authorization: `Bearer ${auth.merchantToken}` })
 
 const rawCategories = ref([])

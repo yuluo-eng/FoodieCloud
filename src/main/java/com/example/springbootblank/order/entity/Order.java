@@ -23,6 +23,17 @@ public class Order {
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
+    // JOIN fields for cross-role display
+    private String shippingAddress;
+    private String dishSummary;
+    private String riderName;
+    private String riderPhone;
+    private String shopName;
+    private String shopAddress;
+    private String shopPhone;
+    private String receiverName;
+    private String shippingPhoneNo;
+
     public Long getId() {
         return id;
     }
@@ -166,4 +177,23 @@ public class Order {
     public void setUpdateTime(LocalDateTime updateTime) {
         this.updateTime = updateTime;
     }
+
+    public String getShippingAddress() { return shippingAddress; }
+    public void setShippingAddress(String shippingAddress) { this.shippingAddress = shippingAddress; }
+    public String getDishSummary() { return dishSummary; }
+    public void setDishSummary(String dishSummary) { this.dishSummary = dishSummary; }
+    public String getRiderName() { return riderName; }
+    public void setRiderName(String riderName) { this.riderName = riderName; }
+    public String getRiderPhone() { return riderPhone; }
+    public void setRiderPhone(String riderPhone) { this.riderPhone = riderPhone; }
+    public String getShopName() { return shopName; }
+    public void setShopName(String shopName) { this.shopName = shopName; }
+    public String getShopAddress() { return shopAddress; }
+    public void setShopAddress(String shopAddress) { this.shopAddress = shopAddress; }
+    public String getShopPhone() { return shopPhone; }
+    public void setShopPhone(String shopPhone) { this.shopPhone = shopPhone; }
+    public String getReceiverName() { return receiverName; }
+    public void setReceiverName(String receiverName) { this.receiverName = receiverName; }
+    public String getShippingPhoneNo() { return shippingPhoneNo; }
+    public void setShippingPhoneNo(String shippingPhoneNo) { this.shippingPhoneNo = shippingPhoneNo; }
 }

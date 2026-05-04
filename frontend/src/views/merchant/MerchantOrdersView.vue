@@ -25,17 +25,42 @@
           <p class="order-no">订单号：{{ order.orderNo }}</p>
           <span class="status">{{ orderStatusText(order.status) }}</span>
         </div>
-        <p>用户ID：{{ order.userId }}</p>
         <p>金额：¥{{ formatMoney(order.totalAmount) }}</p>
         <p>支付：{{ payStatusText(order.payStatus) }}</p>
+        <div v-if="order.riderId" class="rider-tag">
+          🚴 {{ order.riderName || '骑手' }} · {{ riderStatusText(order) }}
+        </div>
+        <div v-else-if="order.status >= 1 && order.status <= 3" class="rider-tag waiting">
+          {{ order.status === 1 ? '等待骑手接单' : '商家自配送' }}
+        </div>
 
         <div class="actions">
           <button class="btn" @click="openDetail(order.id)">查看明细</button>
-          <button v-if="order.status === 1" class="btn" @click="accept(order.id)">接单</button>
+          <button v-if="order.status === 1" class="btn" @click="showAcceptModal(order.id)">接单</button>
           <button v-if="order.status === 2" class="btn" @click="delivery(order.id)">配送</button>
           <button v-if="order.status === 3" class="btn" @click="finish(order.id)">完成</button>
         </div>
       </article>
+    </div>
+
+    <div v-if="acceptModalVisible" class="modal-mask" @click.self="acceptModalVisible = false">
+      <div class="modal accept-modal">
+        <h3>选择配送方式</h3>
+        <p class="accept-desc">请选择该订单的配送方式：</p>
+        <div class="accept-btns">
+          <button class="mode-btn self" @click="confirmAccept('SELF')">
+            <span class="mode-icon">🏪</span>
+            <span class="mode-title">商家自配送</span>
+            <span class="mode-sub">由本店负责配送</span>
+          </button>
+          <button class="mode-btn rider" @click="confirmAccept('RIDER')">
+            <span class="mode-icon">🚴</span>
+            <span class="mode-title">骑手配送</span>
+            <span class="mode-sub">推送至骑手抢单池</span>
+          </button>
+        </div>
+        <button class="cancel-btn" @click="acceptModalVisible = false">取消</button>
+      </div>
     </div>
 
     <div v-if="detailVisible" class="modal-mask" @click.self="detailVisible = false">
@@ -76,6 +101,8 @@ const detailVisible = ref(false)
 const detailLoading = ref(false)
 const detailOrder = ref(null)
 const detailItems = ref([])
+const acceptModalVisible = ref(false)
+const acceptOrderId = ref(null)
 
 onMounted(() => {
   if (!auth.merchantToken) {
@@ -88,7 +115,7 @@ onMounted(() => {
 async function loadOrders() {
   loading.value = true
   try {
-    const params = { page: 1, pageSize: 50, shopId: 1 }
+    const params = { page: 1, pageSize: 50, shopId: auth.merchantProfile?.shopId }
     if (statusFilter.value !== -1) params.status = statusFilter.value
     const res = await request.get('/merchant/orders', {
       params,
@@ -107,8 +134,25 @@ async function loadOrders() {
   }
 }
 
-async function accept(orderId) {
-  await action(`/merchant/orders/${orderId}/accept`, '接单成功')
+function showAcceptModal(orderId) {
+  acceptOrderId.value = orderId
+  acceptModalVisible.value = true
+}
+
+async function confirmAccept(mode) {
+  acceptModalVisible.value = false
+  const id = acceptOrderId.value
+  const msg = mode === 'RIDER' ? '已推送至骑手抢单池' : '接单成功（自配送）'
+  try {
+    await request.patch(`/merchant/orders/${id}/accept`, {}, {
+      params: { deliveryMode: mode },
+      headers: { Authorization: `Bearer ${auth.merchantToken}` },
+    })
+    toast.success(msg)
+    await loadOrders()
+  } catch (e) {
+    toast.error(e.message || '操作失败')
+  }
 }
 
 async function delivery(orderId) {
@@ -126,7 +170,7 @@ async function openDetail(orderId) {
   detailItems.value = []
   try {
     const res = await request.get(`/merchant/orders/${orderId}`, {
-      params: { shopId: 1 },
+      params: { shopId: auth.merchantProfile?.shopId },
       headers: { Authorization: `Bearer ${auth.merchantToken}` },
     })
     detailOrder.value = res.data.data?.order || null
@@ -167,6 +211,14 @@ function payStatusText(status) {
     1: '已支付',
     2: '已退款',
   }[status] || '未知'
+}
+
+function riderStatusText(order) {
+  if (order.riderDeliveredTime) return '已送达'
+  if (order.riderPickupTime) return '配送中'
+  if (order.riderArriveShopTime) return '已到店'
+  if (order.riderAcceptTime) return '已接单'
+  return '等待接单'
 }
 
 function formatMoney(v) {
@@ -269,6 +321,51 @@ function formatMoney(v) {
   border-bottom: 1px dashed #e5e7eb;
 }
 
+.accept-modal { text-align: center; }
+.accept-modal h3 { margin: 0 0 4px; }
+.accept-desc { color: #6b7280; font-size: 0.9rem; margin: 0 0 16px; }
+.accept-btns { display: flex; gap: 12px; margin-bottom: 12px; }
+.mode-btn {
+  flex: 1;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  padding: 18px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.mode-btn:hover { border-color: #2563eb; background: #eff6ff; }
+.mode-btn.rider:hover { border-color: #059669; background: #ecfdf5; }
+.mode-icon { font-size: 1.6rem; }
+.mode-title { font-weight: 700; font-size: 0.95rem; }
+.mode-sub { font-size: 0.78rem; color: #6b7280; }
+.cancel-btn {
+  border: none;
+  background: none;
+  color: #6b7280;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 8px 16px;
+}
+
+.rider-tag {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 10px;
+  background: #eff6ff;
+  color: #2563eb;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.rider-tag.waiting {
+  background: #fef9c3;
+  color: #a16207;
+}
 @media (max-width: 640px) {
   .orders-wrap { padding: 12px; }
   .actions { flex-wrap: wrap; }

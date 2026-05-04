@@ -3,6 +3,13 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.springbootblank.shop.mapper.ShopMapper">
 
+    <select id="listAll" resultType="com.example.springbootblank.shop.entity.Shop">
+        SELECT id, shop_name AS shopName, address, phone, business_status AS businessStatus, notice
+        FROM merchant_shop
+        WHERE business_status = 1
+        ORDER BY id ASC
+    </select>
+
     <select id="findById" resultType="com.example.springbootblank.shop.entity.Shop">
         SELECT id, shop_name, address, phone, business_status, notice, create_time, update_time
         FROM merchant_shop

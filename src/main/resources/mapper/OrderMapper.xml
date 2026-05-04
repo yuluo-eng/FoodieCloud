@@ -23,45 +23,61 @@
     </select>
 
     <select id="listUserOrders" resultType="com.example.springbootblank.order.entity.Order">
-        SELECT id,
-               order_no AS orderNo,
-               user_id AS userId,
-               shop_id AS shopId,
-               total_amount AS totalAmount,
-               remark,
-               status,
-               pay_status AS payStatus,
-               pay_time AS payTime,
-               finish_time AS finishTime,
-               cancel_time AS cancelTime,
-               create_time AS createTime,
-               update_time AS updateTime
-        FROM orders
-        WHERE user_id = #{userId}
+        SELECT o.id,
+               o.order_no AS orderNo,
+               o.user_id AS userId,
+               o.shop_id AS shopId,
+               o.total_amount AS totalAmount,
+               o.remark,
+               o.status,
+               o.pay_status AS payStatus,
+               o.rider_id AS riderId,
+               o.rider_accept_time AS riderAcceptTime,
+               o.rider_arrive_shop_time AS riderArriveShopTime,
+               o.rider_pickup_time AS riderPickupTime,
+               o.rider_delivered_time AS riderDeliveredTime,
+               o.pay_time AS payTime,
+               o.finish_time AS finishTime,
+               o.cancel_time AS cancelTime,
+               o.create_time AS createTime,
+               o.update_time AS updateTime,
+               r.real_name AS riderName,
+               r.phone AS riderPhone
+        FROM orders o
+        LEFT JOIN rider r ON r.id = o.rider_id
+        WHERE o.user_id = #{userId}
         <if test="status != null">
-            AND status = #{status}
+            AND o.status = #{status}
         </if>
-        ORDER BY id DESC
+        ORDER BY o.id DESC
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
     <select id="findUserOrderById" resultType="com.example.springbootblank.order.entity.Order">
-        SELECT id,
-               order_no AS orderNo,
-               user_id AS userId,
-               shop_id AS shopId,
-               total_amount AS totalAmount,
-               remark,
-               status,
-               pay_status AS payStatus,
-               pay_time AS payTime,
-               finish_time AS finishTime,
-               cancel_time AS cancelTime,
-               create_time AS createTime,
-               update_time AS updateTime
-        FROM orders
-        WHERE id = #{orderId}
-          AND user_id = #{userId}
+        SELECT o.id,
+               o.order_no AS orderNo,
+               o.user_id AS userId,
+               o.shop_id AS shopId,
+               o.total_amount AS totalAmount,
+               o.remark,
+               o.status,
+               o.pay_status AS payStatus,
+               o.rider_id AS riderId,
+               o.rider_accept_time AS riderAcceptTime,
+               o.rider_arrive_shop_time AS riderArriveShopTime,
+               o.rider_pickup_time AS riderPickupTime,
+               o.rider_delivered_time AS riderDeliveredTime,
+               o.pay_time AS payTime,
+               o.finish_time AS finishTime,
+               o.cancel_time AS cancelTime,
+               o.create_time AS createTime,
+               o.update_time AS updateTime,
+               r.real_name AS riderName,
+               r.phone AS riderPhone
+        FROM orders o
+        LEFT JOIN rider r ON r.id = o.rider_id
+        WHERE o.id = #{orderId}
+          AND o.user_id = #{userId}
     </select>
 
     <select id="listOrderItems" resultType="com.example.springbootblank.order.entity.OrderItem">
@@ -114,25 +130,33 @@
     </select>
 
     <select id="listMerchantOrders" resultType="com.example.springbootblank.order.entity.Order">
-        SELECT id,
-               order_no AS orderNo,
-               user_id AS userId,
-               shop_id AS shopId,
-               total_amount AS totalAmount,
-               remark,
-               status,
-               pay_status AS payStatus,
-               pay_time AS payTime,
-               finish_time AS finishTime,
-               cancel_time AS cancelTime,
-               create_time AS createTime,
-               update_time AS updateTime
-        FROM orders
-        WHERE shop_id = #{shopId}
+        SELECT o.id,
+               o.order_no AS orderNo,
+               o.user_id AS userId,
+               o.shop_id AS shopId,
+               o.total_amount AS totalAmount,
+               o.remark,
+               o.status,
+               o.pay_status AS payStatus,
+               o.rider_id AS riderId,
+               o.rider_accept_time AS riderAcceptTime,
+               o.rider_arrive_shop_time AS riderArriveShopTime,
+               o.rider_pickup_time AS riderPickupTime,
+               o.rider_delivered_time AS riderDeliveredTime,
+               o.pay_time AS payTime,
+               o.finish_time AS finishTime,
+               o.cancel_time AS cancelTime,
+               o.create_time AS createTime,
+               o.update_time AS updateTime,
+               r.real_name AS riderName,
+               r.phone AS riderPhone
+        FROM orders o
+        LEFT JOIN rider r ON r.id = o.rider_id
+        WHERE o.shop_id = #{shopId}
         <if test="status != null">
-            AND status = #{status}
+            AND o.status = #{status}
         </if>
-        ORDER BY id DESC
+        ORDER BY o.id DESC
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
@@ -204,28 +228,36 @@
     </select>
 
     <select id="listDispatchOrders" resultType="com.example.springbootblank.order.entity.Order">
-        SELECT id,
-               order_no AS orderNo,
-               user_id AS userId,
-               shop_id AS shopId,
-               total_amount AS totalAmount,
-               remark,
-               status,
-               pay_status AS payStatus,
-               rider_id AS riderId,
-               rider_accept_time AS riderAcceptTime,
-               rider_arrive_shop_time AS riderArriveShopTime,
-               rider_pickup_time AS riderPickupTime,
-               rider_delivered_time AS riderDeliveredTime,
-               pay_time AS payTime,
-               finish_time AS finishTime,
-               cancel_time AS cancelTime,
-               create_time AS createTime,
-               update_time AS updateTime
-        FROM orders
-        WHERE status = 1
-          AND rider_id IS NULL
-        ORDER BY id ASC
+        SELECT o.id,
+               o.order_no AS orderNo,
+               o.user_id AS userId,
+               o.shop_id AS shopId,
+               o.total_amount AS totalAmount,
+               o.remark,
+               o.status,
+               o.pay_status AS payStatus,
+               o.rider_id AS riderId,
+               o.rider_accept_time AS riderAcceptTime,
+               o.rider_arrive_shop_time AS riderArriveShopTime,
+               o.rider_pickup_time AS riderPickupTime,
+               o.rider_delivered_time AS riderDeliveredTime,
+               o.pay_time AS payTime,
+               o.finish_time AS finishTime,
+               o.cancel_time AS cancelTime,
+               o.create_time AS createTime,
+               o.update_time AS updateTime,
+               s.shop_name AS shopName,
+               s.address AS shopAddress,
+               s.phone AS shopPhone,
+               u.receiver_name AS receiverName,
+               u.shipping_phone AS shippingPhoneNo,
+               u.shipping_address AS shippingAddress
+        FROM orders o
+        LEFT JOIN merchant_shop s ON s.id = o.shop_id
+        LEFT JOIN user u ON u.id = o.user_id
+        WHERE o.status = 1
+          AND o.rider_id IS NULL
+        ORDER BY o.id ASC
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
@@ -240,28 +272,36 @@
     </update>
 
     <select id="listRiderCurrentOrders" resultType="com.example.springbootblank.order.entity.Order">
-        SELECT id,
-               order_no AS orderNo,
-               user_id AS userId,
-               shop_id AS shopId,
-               total_amount AS totalAmount,
-               remark,
-               status,
-               pay_status AS payStatus,
-               rider_id AS riderId,
-               rider_accept_time AS riderAcceptTime,
-               rider_arrive_shop_time AS riderArriveShopTime,
-               rider_pickup_time AS riderPickupTime,
-               rider_delivered_time AS riderDeliveredTime,
-               pay_time AS payTime,
-               finish_time AS finishTime,
-               cancel_time AS cancelTime,
-               create_time AS createTime,
-               update_time AS updateTime
-        FROM orders
-        WHERE rider_id = #{riderId}
-          AND status IN (2, 3, 4)
-        ORDER BY id DESC
+        SELECT o.id,
+               o.order_no AS orderNo,
+               o.user_id AS userId,
+               o.shop_id AS shopId,
+               o.total_amount AS totalAmount,
+               o.remark,
+               o.status,
+               o.pay_status AS payStatus,
+               o.rider_id AS riderId,
+               o.rider_accept_time AS riderAcceptTime,
+               o.rider_arrive_shop_time AS riderArriveShopTime,
+               o.rider_pickup_time AS riderPickupTime,
+               o.rider_delivered_time AS riderDeliveredTime,
+               o.pay_time AS payTime,
+               o.finish_time AS finishTime,
+               o.cancel_time AS cancelTime,
+               o.create_time AS createTime,
+               o.update_time AS updateTime,
+               s.shop_name AS shopName,
+               s.address AS shopAddress,
+               s.phone AS shopPhone,
+               u.receiver_name AS receiverName,
+               u.shipping_phone AS shippingPhoneNo,
+               u.shipping_address AS shippingAddress
+        FROM orders o
+        LEFT JOIN merchant_shop s ON s.id = o.shop_id
+        LEFT JOIN user u ON u.id = o.user_id
+        WHERE o.rider_id = #{riderId}
+          AND o.status IN (2, 3, 4)
+        ORDER BY o.id DESC
     </select>
 
     <update id="riderArriveShop">

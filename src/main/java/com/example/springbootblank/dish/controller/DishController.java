@@ -5,6 +5,8 @@ import com.example.springbootblank.dish.dto.DishCreateRequest;
 import com.example.springbootblank.dish.dto.DishStatusUpdateRequest;
 import com.example.springbootblank.dish.dto.DishUpdateRequest;
 import com.example.springbootblank.dish.service.DishService;
+import com.example.springbootblank.shop.entity.Shop;
+import com.example.springbootblank.shop.mapper.ShopMapper;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -25,9 +27,11 @@ import java.util.Map;
 public class DishController {
 
     private final DishService dishService;
+    private final ShopMapper shopMapper;
 
-    public DishController(DishService dishService) {
+    public DishController(DishService dishService, ShopMapper shopMapper) {
         this.dishService = dishService;
+        this.shopMapper = shopMapper;
     }
 
     @GetMapping("/merchant/dishes")
@@ -78,6 +82,11 @@ public class DishController {
     ) {
         dishService.updateDishStatus(authorization, id, req);
         return ApiResponse.ok();
+    }
+
+    @GetMapping("/user/shops")
+    public ApiResponse<List<Shop>> listShops() {
+        return ApiResponse.ok(shopMapper.listAll());
     }
 
     @GetMapping("/user/dishes")

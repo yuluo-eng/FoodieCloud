@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springbootblank.admin.mapper.AdminMapper">
+
+    <select id="countAllUsers" resultType="long">
+        SELECT COUNT(*) FROM user
+    </select>
+
+    <select id="listUsers" resultType="map">
+        SELECT id, username, nickname, phone, avatar,
+               receiver_name AS receiverName,
+               shipping_address AS shippingAddress,
+               status AS enabled,
+               create_time AS createTime
+        FROM user
+        ORDER BY id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <update id="updateUserEnabled">
+        UPDATE user SET status = #{enabled} WHERE id = #{id}
+    </update>
+
+    <select id="countAllRiders" resultType="long">
+        SELECT COUNT(*) FROM rider
+    </select>
+
+    <select id="listRiders" resultType="map">
+        SELECT id, username, real_name AS realName, phone,
+               enabled, work_status AS workStatus,
+               create_time AS createTime
+        FROM rider
+        ORDER BY id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <update id="updateRiderEnabled">
+        UPDATE rider SET enabled = #{enabled} WHERE id = #{id}
+    </update>
+
+    <select id="countRiderDelivered" resultType="long">
+        SELECT COUNT(*) FROM orders WHERE rider_id = #{riderId} AND status = 4
+    </select>
+
+    <select id="countAllOrders" resultType="long">
+        SELECT COUNT(*) FROM orders
+        <where>
+            <if test="status != null">AND status = #{status}</if>
+            <if test="shopId != null">AND shop_id = #{shopId}</if>
+        </where>
+    </select>
+
+    <select id="listAllOrders" resultType="com.example.springbootblank.order.entity.Order">
+        SELECT o.id,
+               o.order_no AS orderNo,
+               o.user_id AS userId,
+               o.shop_id AS shopId,
+               o.total_amount AS totalAmount,
+               o.remark,
+               o.status,
+               o.pay_status AS payStatus,
+               o.rider_id AS riderId,
+               o.pay_time AS payTime,
+               o.finish_time AS finishTime,
+               o.cancel_time AS cancelTime,
+               o.create_time AS createTime,
+               s.shop_name AS shopName,
+               r.real_name AS riderName
+        FROM orders o
+        LEFT JOIN merchant_shop s ON s.id = o.shop_id
+        LEFT JOIN rider r ON r.id = o.rider_id
+        <where>
+            <if test="status != null">AND o.status = #{status}</if>
+            <if test="shopId != null">AND o.shop_id = #{shopId}</if>
+        </where>
+        ORDER BY o.id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="countTotalOrders" resultType="long">
+        SELECT COUNT(*) FROM orders
+    </select>
+
+    <select id="sumTotalRevenue" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE pay_status = 1
+    </select>
+
+    <select id="countActiveRiders" resultType="long">
+        SELECT COUNT(*) FROM rider WHERE work_status = 'ONLINE' AND enabled = 1
+    </select>
+
+    <select id="countShops" resultType="long">
+        SELECT COUNT(*) FROM merchant_shop
+    </select>
+
+    <select id="listShops" resultType="com.example.springbootblank.shop.entity.Shop">
+        SELECT id, shop_name AS shopName, address, phone,
+               business_status AS businessStatus, notice,
+               create_time AS createTime
+        FROM merchant_shop
+        ORDER BY id ASC
+    </select>
+
+    <update id="updateShopBusinessStatus">
+        UPDATE merchant_shop SET business_status = #{businessStatus} WHERE id = #{id}
+    </update>
+
+</mapper>

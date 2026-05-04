@@ -5,9 +5,11 @@ import request from '@/api/request'
 const U_KEY = 'ysh_user_token'
 const M_KEY = 'ysh_merchant_token'
 const R_KEY = 'ysh_rider_token'
+const A_KEY = 'ysh_admin_token'
 const U_PROFILE_KEY = 'ysh_user_profile'
 const M_PROFILE_KEY = 'ysh_merchant_profile'
 const R_PROFILE_KEY = 'ysh_rider_profile'
+const A_PROFILE_KEY = 'ysh_admin_profile'
 
 const ROLE_LABELS = {
   SUPER_ADMIN: '超级管理员',
@@ -29,13 +31,16 @@ export const useAuthStore = defineStore('auth', () => {
   const userToken = ref(localStorage.getItem(U_KEY) || '')
   const merchantToken = ref(localStorage.getItem(M_KEY) || '')
   const riderToken = ref(localStorage.getItem(R_KEY) || '')
+  const adminToken = ref(localStorage.getItem(A_KEY) || '')
   const userProfile = ref(readJson(U_PROFILE_KEY))
   const merchantProfile = ref(readJson(M_PROFILE_KEY))
   const riderProfile = ref(readJson(R_PROFILE_KEY))
+  const adminProfile = ref(readJson(A_PROFILE_KEY))
 
   const isUserLoggedIn = computed(() => !!userToken.value)
   const isMerchantLoggedIn = computed(() => !!merchantToken.value)
   const isRiderLoggedIn = computed(() => !!riderToken.value)
+  const isAdminLoggedIn = computed(() => !!adminToken.value)
 
   const userDisplayLabel = computed(() => {
     const p = userProfile.value
@@ -133,6 +138,7 @@ export const useAuthStore = defineStore('auth', () => {
       username: employeeInfo.username,
       realName: employeeInfo.realName ?? null,
       roleCode: employeeInfo.roleCode ?? null,
+      shopId: employeeInfo.shopId ?? null,
       displayName,
     }
     persistMerchantProfile()
@@ -204,6 +210,7 @@ export const useAuthStore = defineStore('auth', () => {
       username: me.username,
       realName: me.displayName !== me.username ? me.displayName : null,
       roleCode: me.roleCode ?? null,
+      shopId: me.shopId ?? null,
       displayName: me.displayName || me.username,
     }
     persistMerchantProfile()
@@ -260,6 +267,19 @@ export const useAuthStore = defineStore('auth', () => {
     persistRiderProfile()
   }
 
+  function setAdminToken(token, profile) {
+    adminToken.value = token || ''
+    if (token) localStorage.setItem(A_KEY, token)
+    else localStorage.removeItem(A_KEY)
+    adminProfile.value = profile || null
+    if (profile) localStorage.setItem(A_PROFILE_KEY, JSON.stringify(profile))
+    else localStorage.removeItem(A_PROFILE_KEY)
+  }
+
+  function logoutAdmin() {
+    setAdminToken('', null)
+  }
+
   return {
     userToken,
     merchantToken,
@@ -287,5 +307,10 @@ export const useAuthStore = defineStore('auth', () => {
     logoutUser,
     logoutMerchant,
     logoutRider,
+    adminToken,
+    adminProfile,
+    isAdminLoggedIn,
+    setAdminToken,
+    logoutAdmin,
   }
 })

@@ -1,7 +1,7 @@
 # 悦食汇点餐系统论文初稿（First Draft）
 
 > 说明：本文档仅基于当前仓库已存在的实现与文档整理，不编造未实现功能。  
-> 事实来源优先级：`src/main/java`、`src/main/resources/mapper`、`docs/init.sql`、`docs/backend-api.md`、`README.md`。
+> 事实来源优先级：`src/main/java`、`src/main/resources/mapper`、`docs/init.sql`、`docs/后端接口文档.md`、`README.md`。
 
 ---
 
@@ -121,7 +121,7 @@
 - 用户端：注册登录、菜品浏览、购物车管理、下单、支付（模拟）、订单查询与取消。
 - 商家端：员工登录、员工管理、店铺设置、分类管理、菜品管理、订单处理、工作台统计。
 
-接口层面的已实现能力详见 `docs/backend-api.md`。
+接口层面的已实现能力详见 `docs/后端接口文档.md`。
 
 ### 3.2 核心模块用例描述
 
@@ -274,7 +274,7 @@ flowchart LR
 ### 4.2 系统功能设计
 
 按业务域划分为：认证、店铺、分类、菜品、员工、购物车、订单、支付、工作台统计等模块。  
-模块职责和接口入口可在 `docs/backend-api.md` 与各 `*Controller` 中对应验证。
+模块职责和接口入口可在 `docs/后端接口文档.md` 与各 `*Controller` 中对应验证。
 
 #### 4.2.1 系统功能模块图
 

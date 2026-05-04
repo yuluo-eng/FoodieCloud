@@ -10,6 +10,7 @@ const pinia = createPinia()
 app.use(pinia).use(router)
 
 const restoredToken =
+  localStorage.getItem('ysh_admin_token') ||
   localStorage.getItem('ysh_rider_token') ||
   localStorage.getItem('ysh_merchant_token') ||
   localStorage.getItem('ysh_user_token')

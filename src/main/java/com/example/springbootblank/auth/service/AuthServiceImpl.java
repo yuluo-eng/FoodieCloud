@@ -112,6 +112,7 @@ public class AuthServiceImpl implements AuthService {
         employeeInfo.put("username", employee.getUsername());
         employeeInfo.put("realName", employee.getRealName());
         employeeInfo.put("roleCode", employee.getRoleCode());
+        employeeInfo.put("shopId", employee.getShopId());
 
         Map<String, Object> data = new HashMap<>();
         data.put("token", token);
@@ -186,7 +187,7 @@ public class AuthServiceImpl implements AuthService {
             String userDisplay =
                     StringUtils.hasText(user.getNickname()) ? user.getNickname() : user.getUsername();
             return new AuthMeResponse(
-                    user.getId(), JwtService.TYPE_USER, user.getUsername(), null, userDisplay, user.getAvatar());
+                    user.getId(), JwtService.TYPE_USER, user.getUsername(), null, userDisplay, user.getAvatar(), null);
         }
         if (JwtService.TYPE_EMPLOYEE.equals(principal.type())) {
             Employee employee = authMapper.findEmployeeByIdWithRole(principal.id());
@@ -201,7 +202,8 @@ public class AuthServiceImpl implements AuthService {
                     employee.getUsername(),
                     employee.getRoleCode(),
                     empDisplay,
-                    null
+                    null,
+                    employee.getShopId()
             );
         }
         if (JwtService.TYPE_RIDER.equals(principal.type())) {
@@ -217,6 +219,7 @@ public class AuthServiceImpl implements AuthService {
                     rider.getUsername(),
                     null,
                     riderDisplay,
+                    null,
                     null
             );
         }

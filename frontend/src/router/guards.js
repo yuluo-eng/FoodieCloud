@@ -31,6 +31,13 @@ export function authBeforeEach(to) {
       replace: true,
     }
   }
+  if (to.meta.requiresAdmin && !auth.isAdminLoggedIn) {
+    return {
+      name: 'admin-login',
+      query: { redirect: to.fullPath },
+      replace: true,
+    }
+  }
 
   if (to.meta.guestOnly === 'user' && auth.isUserLoggedIn) {
     return { path: '/user', replace: true }
@@ -40,6 +47,9 @@ export function authBeforeEach(to) {
   }
   if (to.meta.guestOnly === 'rider' && auth.isRiderLoggedIn) {
     return { path: '/rider', replace: true }
+  }
+  if (to.meta.guestOnly === 'admin' && auth.isAdminLoggedIn) {
+    return { path: '/admin', replace: true }
   }
 
   return true

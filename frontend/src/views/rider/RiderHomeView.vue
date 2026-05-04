@@ -28,19 +28,43 @@
             <p>#{{ order.orderNo }}</p>
             <span>{{ statusText(order.status) }}</span>
           </div>
-          <p>金额：¥{{ formatMoney(order.totalAmount) }}</p>
-          <p>店铺ID：{{ order.shopId }}</p>
+          <p class="amount">¥{{ formatMoney(order.totalAmount) }}</p>
+          <div class="info-block">
+            <p class="info-title">🏪 商家</p>
+            <p>{{ order.shopName || `店铺#${order.shopId}` }}</p>
+            <p v-if="order.shopAddress" class="sub">{{ order.shopAddress }}</p>
+            <a v-if="order.shopPhone" :href="'tel:' + order.shopPhone" class="phone-link">📞 {{ order.shopPhone }}</a>
+          </div>
+          <div v-if="order.shippingAddress || order.receiverName" class="info-block">
+            <p class="info-title">📍 收货人</p>
+            <p>{{ order.receiverName || '未设置' }} <span v-if="order.shippingPhoneNo" class="sub">{{ order.shippingPhoneNo }}</span></p>
+            <p v-if="order.shippingAddress" class="sub">{{ order.shippingAddress }}</p>
+          </div>
           <div class="actions">
             <button v-if="tab === 'dispatch'" class="btn primary" @click="accept(order.id)">接单</button>
             <template v-else>
               <button v-if="order.status === 2" class="btn" @click="arrive(order.id)">到店</button>
               <button v-if="order.status === 3 && !order.riderPickupTime" class="btn" @click="pickup(order.id)">取餐</button>
-              <button v-if="order.status === 3 && order.riderPickupTime" class="btn success" @click="delivered(order.id)">送达</button>
+              <button v-if="order.status === 3 && order.riderPickupTime" class="btn success" @click="showDeliverConfirm(order)">送达</button>
             </template>
           </div>
         </article>
       </div>
     </section>
+
+    <div v-if="deliverConfirmVisible" class="modal-mask" @click.self="deliverConfirmVisible = false">
+      <div class="confirm-modal">
+        <div class="confirm-icon">📦</div>
+        <h3>确认送达？</h3>
+        <p class="confirm-order">订单 #{{ deliverConfirmOrder?.orderNo }}</p>
+        <p class="confirm-addr" v-if="deliverConfirmOrder?.shippingAddress">{{ deliverConfirmOrder.shippingAddress }}</p>
+        <p class="confirm-warn">请确认已将餐品交给顾客后再点击确认</p>
+        <div class="confirm-actions">
+          <button class="btn-cancel" @click="deliverConfirmVisible = false">取消</button>
+          <button class="btn-confirm" @click="confirmDeliver">确认送达</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -68,6 +92,8 @@ const loading = ref(false)
 const dispatchOrders = ref([])
 const currentOrders = ref([])
 const workStatus = ref(auth.riderProfile?.workStatus || 'ONLINE')
+const deliverConfirmVisible = ref(false)
+const deliverConfirmOrder = ref(null)
 
 const activeList = computed(() => (tab.value === 'dispatch' ? dispatchOrders.value : currentOrders.value))
 
@@ -129,9 +155,18 @@ async function pickup(orderId) {
   }
 }
 
-async function delivered(orderId) {
+function showDeliverConfirm(order) {
+  deliverConfirmOrder.value = order
+  deliverConfirmVisible.value = true
+}
+
+async function confirmDeliver() {
+  deliverConfirmVisible.value = false
+  const orderId = deliverConfirmOrder.value?.id
+  if (!orderId) return
   try {
     await riderDelivered(auth.riderToken, orderId)
+    toast.success('送达成功')
     await loadData()
   } catch (e) {
     toast.error(e.message || '操作失败')
@@ -271,6 +306,76 @@ function formatMoney(v) {
   color: #64748b;
 }
 .empty-tip { font-size: 0.95rem; }
+.amount { font-weight: 700; color: #c2410c; margin: 6px 0; }
+.info-block {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+.info-block p { margin: 0 0 2px; }
+.info-title { font-weight: 600; color: #334155; margin-bottom: 4px !important; }
+.sub { color: #64748b; font-size: 0.82rem; }
+.phone-link {
+  display: inline-block;
+  margin-top: 4px;
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 20px;
+}
+.confirm-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: center;
+  width: 100%;
+  max-width: 340px;
+}
+.confirm-icon { font-size: 2rem; margin-bottom: 8px; }
+.confirm-modal h3 { margin: 0 0 8px; font-size: 1.15rem; }
+.confirm-order { color: #334155; font-weight: 600; margin: 0 0 4px; font-size: 0.92rem; }
+.confirm-addr { color: #64748b; font-size: 0.85rem; margin: 0 0 12px; }
+.confirm-warn {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin: 0 0 20px;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border-radius: 8px;
+}
+.confirm-actions { display: flex; gap: 10px; }
+.btn-cancel {
+  flex: 1;
+  padding: 11px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.btn-confirm {
+  flex: 1;
+  padding: 11px;
+  border: none;
+  border-radius: 10px;
+  background: #16a34a;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
 
 @media (max-width: 480px) {
   .top { flex-direction: column; align-items: stretch; }

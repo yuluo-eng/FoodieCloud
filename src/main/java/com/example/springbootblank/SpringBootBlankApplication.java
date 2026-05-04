@@ -19,7 +19,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
         "com.example.springbootblank.shop.mapper",
         "com.example.springbootblank.category.mapper",
         "com.example.springbootblank.rider.mapper",
-        "com.example.springbootblank.log.mapper"
+        "com.example.springbootblank.log.mapper",
+        "com.example.springbootblank.admin.mapper"
 })
 @EnableConfigurationProperties(JwtProperties.class)
 public class SpringBootBlankApplication {

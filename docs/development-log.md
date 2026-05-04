@@ -202,7 +202,7 @@ WHERE id = #{dishId} AND stock >= #{quantity}
 ## #25 E2E 测试报告
 
 **新增文件**：
-- `docs/e2e-test-report.md` — 主链路 4 条 + 异常链路 6 条用例清单 + 单元测试覆盖矩阵
+- `docs/testing-guide.md` 第 7 节 — 主链路 + 异常链路用例表 + 单元测试覆盖摘要（原 `e2e-test-report.md` 已并入）
 
 ---
 
@@ -216,3 +216,16 @@ WHERE id = #{dishId} AND stock >= #{quantity}
 ## 环境修复
 
 - `pom.xml` — 新增 `maven-surefire-plugin` 配置，添加 `-XX:+EnableDynamicAgentLoading` 解决 Mockito 5 + JDK 17 的 MockMaker 初始化失败问题
+
+---
+
+# 第五批及后续（当前交付基线）
+
+以下增量已合入代码库；完整索引见 [`development-documentation.md`](./development-documentation.md)，测试对照见 [`testing-guide.md`](./testing-guide.md)。
+
+- **三端联动与下单流程**：订单确认页、支付页、支付结果页；订单查询展示骑手/店铺/收货信息（Mapper 联表）。
+- **独立管理后台**：`/admin` 独立登录与路由，`adminToken`；商家管理（店铺列表、营业状态切换）；移除「近 30 天活跃用户」统计。
+- **商家配送方式**：接单时可选择自配送或骑手池（`deliveryMode`）。
+- **多商家**：`GET /api/user/shops`；用户 `/user` 选店后进入 `/user/shop/:shopId`；创建订单强制 `shopId`；员工登录与 `/auth/me` 返回 `shopId`，商家端请求不再硬编码店铺。
+- **骑手送达**：送达操作二次确认弹窗。
+- **`AuthMeResponse`**：增加 `shopId` 字段，修复旧会话下商家端 `shopId` 为空导致 400 的问题；商家首页待 profile 就绪后再挂载子页面。
