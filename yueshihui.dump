@@ -1,0 +1,511 @@
+-- MySQL dump 10.13  Distrib 5.7.23, for macos10.13 (x86_64)
+--
+-- Host: 127.0.0.1    Database: yueshihui
+-- ------------------------------------------------------
+-- Server version	5.7.43
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `cart_item`
+--
+
+DROP TABLE IF EXISTS `cart_item`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `cart_item` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '购物车项ID',
+  `user_id` bigint(20) NOT NULL COMMENT '用户ID',
+  `dish_id` bigint(20) NOT NULL COMMENT '菜品ID',
+  `quantity` int(11) NOT NULL DEFAULT '1' COMMENT '数量',
+  `unit_price` decimal(10,2) NOT NULL COMMENT '加入购物车时单价',
+  `selected` tinyint(4) NOT NULL DEFAULT '1' COMMENT '是否选中 1是 0否',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_dish` (`user_id`,`dish_id`),
+  KEY `fk_cart_dish` (`dish_id`),
+  KEY `idx_cart_user_selected` (`user_id`,`selected`),
+  CONSTRAINT `fk_cart_dish` FOREIGN KEY (`dish_id`) REFERENCES `dish` (`id`),
+  CONSTRAINT `fk_cart_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='购物车项表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `cart_item`
+--
+
+LOCK TABLES `cart_item` WRITE;
+/*!40000 ALTER TABLE `cart_item` DISABLE KEYS */;
+/*!40000 ALTER TABLE `cart_item` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `dish`
+--
+
+DROP TABLE IF EXISTS `dish`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dish` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '菜品ID',
+  `shop_id` bigint(20) NOT NULL COMMENT '店铺ID',
+  `category_id` bigint(20) NOT NULL COMMENT '分类ID',
+  `dish_name` varchar(100) NOT NULL COMMENT '菜品名称',
+  `price` decimal(10,2) NOT NULL COMMENT '价格',
+  `image_url` varchar(255) DEFAULT NULL COMMENT '图片URL',
+  `description` varchar(500) DEFAULT NULL COMMENT '描述',
+  `stock` int(11) NOT NULL DEFAULT '9999' COMMENT '库存',
+  `status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '状态 1上架 0下架',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_dish_category` (`category_id`),
+  KEY `idx_dish_shop_category` (`shop_id`,`category_id`),
+  KEY `idx_dish_shop_status_category` (`shop_id`,`status`,`category_id`),
+  CONSTRAINT `fk_dish_category` FOREIGN KEY (`category_id`) REFERENCES `dish_category` (`id`),
+  CONSTRAINT `fk_dish_shop` FOREIGN KEY (`shop_id`) REFERENCES `merchant_shop` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COMMENT='菜品表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `dish`
+--
+
+LOCK TABLES `dish` WRITE;
+/*!40000 ALTER TABLE `dish` DISABLE KEYS */;
+INSERT INTO `dish` VALUES (1,1,1,'招牌牛肉饭',18.00,'http://127.0.0.1:8080/uploads/493aa28d4487423eb1d965d1cb6e6708.jpg','畅销款',100,0,'2026-04-01 01:17:35','2026-04-14 23:30:05'),(2,1,2,'香辣鸡翅',12.00,'http://127.0.0.1:8080/uploads/8b225bf94d0d471891dfe5893b23ee6c.jpg','微辣',100,0,'2026-04-01 01:17:35','2026-04-14 23:29:58'),(3,1,3,'柠檬红茶',6.00,'http://127.0.0.1:8080/uploads/f675d58f117f41038a8c86fcb4a7e38a.jpg','解腻推荐',100,0,'2026-04-01 01:17:35','2026-04-14 23:26:52'),(4,1,3,'关山难越',10.00,'http://127.0.0.1:8080/uploads/ee527294ecff4038919e4a78b97ccac4.jpg','柠檬茶',100,1,'2026-04-14 23:26:46','2026-04-14 23:26:46'),(5,1,1,'披萨',15.00,'http://127.0.0.1:8080/uploads/8d5b075a2bf64603a28be85a5045858e.jpg','',99,1,'2026-04-14 23:27:35','2026-05-04 14:30:29'),(6,1,1,'寿司',30.00,'http://127.0.0.1:8080/uploads/85ad7a457a744bdaa80c6488be8c3143.jpg','',97,1,'2026-04-14 23:28:12','2026-05-04 14:32:20'),(7,1,4,'轻食沙拉',12.00,'http://127.0.0.1:8080/uploads/85d03ecb04084ccb999ede20f8a9467f.jpg','',100,1,'2026-04-14 23:29:04','2026-04-14 23:29:04'),(8,1,2,'炸鸡',13.00,'http://127.0.0.1:8080/uploads/f69c3f4e2179407fa73b4a22d23b91f4.jpg','',100,1,'2026-04-14 23:29:53','2026-04-14 23:29:53');
+/*!40000 ALTER TABLE `dish` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `dish_category`
+--
+
+DROP TABLE IF EXISTS `dish_category`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dish_category` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '分类ID',
+  `shop_id` bigint(20) NOT NULL COMMENT '店铺ID',
+  `category_name` varchar(50) NOT NULL COMMENT '分类名',
+  `sort` int(11) NOT NULL DEFAULT '0' COMMENT '排序',
+  `status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '状态 1启用 0禁用',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_dc_shop` (`shop_id`),
+  CONSTRAINT `fk_dc_shop` FOREIGN KEY (`shop_id`) REFERENCES `merchant_shop` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COMMENT='菜品分类表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `dish_category`
+--
+
+LOCK TABLES `dish_category` WRITE;
+/*!40000 ALTER TABLE `dish_category` DISABLE KEYS */;
+INSERT INTO `dish_category` VALUES (1,1,'主食',1,1,'2026-04-01 01:17:35','2026-04-14 23:24:06'),(2,1,'小吃',2,1,'2026-04-01 01:17:35','2026-04-01 01:17:35'),(3,1,'饮品',3,1,'2026-04-01 01:17:35','2026-04-01 01:17:35'),(4,1,'轻食',4,1,'2026-04-03 13:38:58','2026-04-14 23:24:14');
+/*!40000 ALTER TABLE `dish_category` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `employee`
+--
+
+DROP TABLE IF EXISTS `employee`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `employee` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '员工ID',
+  `username` varchar(50) NOT NULL COMMENT '登录账号',
+  `password` varchar(100) NOT NULL COMMENT '密码(加密后)',
+  `real_name` varchar(50) NOT NULL COMMENT '姓名',
+  `phone` varchar(20) DEFAULT NULL COMMENT '手机号',
+  `shop_id` bigint(20) NOT NULL COMMENT '所属店铺ID',
+  `role_id` bigint(20) NOT NULL COMMENT '角色ID',
+  `enabled` tinyint(4) NOT NULL DEFAULT '1' COMMENT '启用状态 1启用 0禁用',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`),
+  UNIQUE KEY `phone` (`phone`),
+  KEY `fk_emp_shop` (`shop_id`),
+  KEY `fk_emp_role` (`role_id`),
+  CONSTRAINT `fk_emp_role` FOREIGN KEY (`role_id`) REFERENCES `role` (`id`),
+  CONSTRAINT `fk_emp_shop` FOREIGN KEY (`shop_id`) REFERENCES `merchant_shop` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COMMENT='员工表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `employee`
+--
+
+LOCK TABLES `employee` WRITE;
+/*!40000 ALTER TABLE `employee` DISABLE KEYS */;
+INSERT INTO `employee` VALUES (1,'admin','$2a$10$FsoODkPuGj26CrGK9uXpU.TrmVRB80WDUm0OaeXAtEwx/v9.V4foa','系统管理员','13900000000',1,1,1,'2026-04-01 01:17:35','2026-04-02 14:08:52'),(3,'123','$2a$10$D837mFvj6SguPt8a9ut3ae2rfzgh7wyIhQPfBk4Vf3wkEo5gVYbMW','店长','12345674567',1,2,1,'2026-04-03 15:14:54','2026-04-03 15:14:54');
+/*!40000 ALTER TABLE `employee` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `merchant_shop`
+--
+
+DROP TABLE IF EXISTS `merchant_shop`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `merchant_shop` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '店铺ID',
+  `shop_name` varchar(100) NOT NULL COMMENT '店铺名称',
+  `address` varchar(255) DEFAULT NULL COMMENT '地址',
+  `phone` varchar(20) DEFAULT NULL COMMENT '联系电话',
+  `business_status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '营业状态 1营业 0打烊',
+  `notice` varchar(255) DEFAULT NULL COMMENT '公告',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COMMENT='店铺表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `merchant_shop`
+--
+
+LOCK TABLES `merchant_shop` WRITE;
+/*!40000 ALTER TABLE `merchant_shop` DISABLE KEYS */;
+INSERT INTO `merchant_shop` VALUES (1,'悦食汇总店','XX大学商业街1号','13800000000',1,'欢迎光临悦食汇','2026-04-01 01:11:58','2026-04-02 21:50:45');
+/*!40000 ALTER TABLE `merchant_shop` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `operation_log`
+--
+
+DROP TABLE IF EXISTS `operation_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `operation_log` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `operator_type` varchar(20) NOT NULL COMMENT 'USER/EMPLOYEE',
+  `operator_id` bigint(20) NOT NULL COMMENT '操作人ID',
+  `module` varchar(50) NOT NULL COMMENT '模块',
+  `action` varchar(50) NOT NULL COMMENT '动作',
+  `content` varchar(500) DEFAULT NULL COMMENT '操作内容',
+  `ip` varchar(50) DEFAULT NULL COMMENT 'IP',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_log_operator_time` (`operator_id`,`create_time`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `operation_log`
+--
+
+LOCK TABLES `operation_log` WRITE;
+/*!40000 ALTER TABLE `operation_log` DISABLE KEYS */;
+INSERT INTO `operation_log` VALUES (1,'RIDER',4,'AUTH','LOGIN','骑手登录: rider',NULL,'2026-05-04 13:59:08'),(2,'USER',4,'AUTH','LOGIN','用户登录: root',NULL,'2026-05-04 14:00:07'),(3,'EMPLOYEE',1,'AUTH','LOGIN','商家登录: admin',NULL,'2026-05-04 14:00:44'),(4,'RIDER',4,'AUTH','LOGIN','骑手登录: rider',NULL,'2026-05-04 14:01:02'),(5,'USER',4,'AUTH','LOGIN','用户登录: root',NULL,'2026-05-04 14:29:36'),(6,'EMPLOYEE',1,'AUTH','LOGIN','商家登录: admin',NULL,'2026-05-04 14:30:49'),(7,'USER',4,'AUTH','LOGIN','用户登录: root',NULL,'2026-05-04 14:32:07'),(8,'EMPLOYEE',1,'AUTH','LOGIN','商家登录: admin',NULL,'2026-05-04 15:02:01'),(9,'EMPLOYEE',3,'AUTH','LOGIN','商家登录: 123',NULL,'2026-05-04 15:23:38');
+/*!40000 ALTER TABLE `operation_log` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `order_item`
+--
+
+DROP TABLE IF EXISTS `order_item`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `order_item` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '明细ID',
+  `order_id` bigint(20) NOT NULL COMMENT '订单ID',
+  `dish_id` bigint(20) NOT NULL COMMENT '菜品ID',
+  `dish_name` varchar(100) NOT NULL COMMENT '下单时菜品名',
+  `dish_price` decimal(10,2) NOT NULL COMMENT '下单时单价',
+  `quantity` int(11) NOT NULL COMMENT '数量',
+  `amount` decimal(10,2) NOT NULL COMMENT '小计金额',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `fk_oi_dish` (`dish_id`),
+  KEY `idx_oi_order` (`order_id`),
+  CONSTRAINT `fk_oi_dish` FOREIGN KEY (`dish_id`) REFERENCES `dish` (`id`),
+  CONSTRAINT `fk_oi_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COMMENT='订单明细表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `order_item`
+--
+
+LOCK TABLES `order_item` WRITE;
+/*!40000 ALTER TABLE `order_item` DISABLE KEYS */;
+INSERT INTO `order_item` VALUES (1,1,3,'柠檬红茶',6.00,1,6.00,'2026-04-02 17:23:09','2026-04-02 17:23:09'),(2,2,3,'柠檬红茶',6.00,1,6.00,'2026-04-02 17:55:18','2026-04-02 17:55:18'),(3,2,2,'香辣鸡翅',12.00,1,12.00,'2026-04-02 17:55:18','2026-04-02 17:55:18'),(4,2,1,'招牌牛肉饭',18.00,1,18.00,'2026-04-02 17:55:18','2026-04-02 17:55:18'),(5,3,3,'柠檬红茶',6.00,2,12.00,'2026-04-03 13:45:37','2026-04-03 13:45:37'),(6,3,2,'香辣鸡翅',12.00,1,12.00,'2026-04-03 13:45:37','2026-04-03 13:45:37'),(7,4,1,'招牌牛肉饭',18.00,2,36.00,'2026-04-09 20:04:29','2026-04-09 20:04:29'),(8,5,6,'寿司',30.00,1,30.00,'2026-04-21 14:08:53','2026-04-21 14:08:53'),(9,5,5,'披萨',15.00,1,15.00,'2026-04-21 14:08:53','2026-04-21 14:08:53'),(10,6,7,'轻食沙拉',12.00,1,12.00,'2026-04-25 22:20:13','2026-04-25 22:20:13'),(11,7,6,'寿司',30.00,1,30.00,'2026-05-04 14:00:14','2026-05-04 14:00:14'),(12,8,6,'寿司',30.00,1,30.00,'2026-05-04 14:30:25','2026-05-04 14:30:25'),(13,8,5,'披萨',15.00,1,15.00,'2026-05-04 14:30:25','2026-05-04 14:30:25'),(14,9,6,'寿司',30.00,1,30.00,'2026-05-04 14:32:19','2026-05-04 14:32:19');
+/*!40000 ALTER TABLE `order_item` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `orders`
+--
+
+DROP TABLE IF EXISTS `orders`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `orders` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '订单ID',
+  `order_no` varchar(64) NOT NULL COMMENT '订单号',
+  `user_id` bigint(20) NOT NULL COMMENT '用户ID',
+  `shop_id` bigint(20) NOT NULL COMMENT '店铺ID',
+  `total_amount` decimal(10,2) NOT NULL COMMENT '订单总金额',
+  `remark` varchar(255) DEFAULT NULL COMMENT '备注',
+  `status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '订单状态 0待支付 1已支付 2已接单 3配送中 4已完成 5已取消',
+  `pay_status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '支付状态 0未支付 1已支付 2已退款',
+  `pay_time` datetime DEFAULT NULL COMMENT '支付时间',
+  `finish_time` datetime DEFAULT NULL COMMENT '完成时间',
+  `cancel_time` datetime DEFAULT NULL COMMENT '取消时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `rider_id` bigint(20) DEFAULT NULL COMMENT '骑手ID',
+  `rider_accept_time` datetime DEFAULT NULL COMMENT '骑手接单时间',
+  `rider_arrive_shop_time` datetime DEFAULT NULL COMMENT '骑手到店时间',
+  `rider_pickup_time` datetime DEFAULT NULL COMMENT '骑手取餐时间',
+  `rider_delivered_time` datetime DEFAULT NULL COMMENT '骑手送达时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `order_no` (`order_no`),
+  KEY `idx_order_user_time` (`user_id`,`create_time`),
+  KEY `idx_order_shop_time` (`shop_id`,`create_time`),
+  KEY `idx_orders_shop_status_time` (`shop_id`,`status`,`create_time`),
+  KEY `idx_orders_dispatch_pool` (`status`,`rider_id`),
+  KEY `idx_orders_rider_status` (`rider_id`,`status`,`update_time`),
+  CONSTRAINT `fk_order_rider` FOREIGN KEY (`rider_id`) REFERENCES `rider` (`id`),
+  CONSTRAINT `fk_order_shop` FOREIGN KEY (`shop_id`) REFERENCES `merchant_shop` (`id`),
+  CONSTRAINT `fk_order_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COMMENT='订单主表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `orders`
+--
+
+LOCK TABLES `orders` WRITE;
+/*!40000 ALTER TABLE `orders` DISABLE KEYS */;
+INSERT INTO `orders` VALUES (1,'YSH20260402172309031',4,1,6.00,'',5,0,NULL,NULL,'2026-04-03 16:58:41','2026-04-02 17:23:09','2026-04-03 16:58:41',NULL,NULL,NULL,NULL,NULL),(2,'YSH20260402175518803',4,1,36.00,'',5,0,NULL,NULL,'2026-04-03 16:58:38','2026-04-02 17:55:18','2026-04-03 16:58:38',NULL,NULL,NULL,NULL,NULL),(3,'YSH20260403134537634',4,1,24.00,'',4,1,'2026-04-03 13:58:18',NULL,NULL,'2026-04-03 13:45:37','2026-04-03 15:13:28',NULL,NULL,NULL,NULL,NULL),(4,'YSH20260409200429300',4,1,36.00,'',4,1,'2026-04-09 20:04:50',NULL,NULL,'2026-04-09 20:04:29','2026-04-09 20:05:37',NULL,NULL,NULL,NULL,NULL),(5,'YSH20260421140853975',4,1,45.00,'',4,1,'2026-04-21 14:09:12',NULL,NULL,'2026-04-21 14:08:53','2026-04-21 14:09:26',NULL,NULL,NULL,NULL,NULL),(6,'YSH20260425222013434',4,1,12.00,'',4,1,'2026-04-25 22:20:49',NULL,NULL,'2026-04-25 22:20:13','2026-04-25 22:21:24',NULL,NULL,NULL,NULL,NULL),(7,'YSH20260504140014686',4,1,30.00,'',4,1,'2026-05-04 14:00:30',NULL,NULL,'2026-05-04 14:00:14','2026-05-04 14:31:22',NULL,NULL,NULL,NULL,NULL),(8,'YSH20260504143025785',4,1,45.00,'让我看看商家和骑手能不能看得见？',4,1,'2026-05-04 14:30:29',NULL,NULL,'2026-05-04 14:30:25','2026-05-04 14:31:52',NULL,NULL,NULL,NULL,NULL),(9,'YSH20260504143219258',4,1,30.00,'给骑手',4,1,'2026-05-04 14:32:20','2026-05-04 14:45:02',NULL,'2026-05-04 14:32:19','2026-05-04 14:45:02',4,'2026-05-04 14:32:28','2026-05-04 14:44:55','2026-05-04 14:44:56','2026-05-04 14:45:02');
+/*!40000 ALTER TABLE `orders` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `payment_record`
+--
+
+DROP TABLE IF EXISTS `payment_record`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `payment_record` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '支付记录ID',
+  `order_id` bigint(20) NOT NULL COMMENT '订单ID',
+  `payment_no` varchar(64) NOT NULL COMMENT '支付流水号',
+  `pay_channel` varchar(30) NOT NULL DEFAULT 'MOCK' COMMENT '支付渠道 MOCK/ALIPAY/WECHAT',
+  `pay_amount` decimal(10,2) NOT NULL COMMENT '支付金额',
+  `pay_status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '支付状态 0处理中 1成功 2失败',
+  `transaction_no` varchar(64) DEFAULT NULL COMMENT '第三方交易号',
+  `paid_time` datetime DEFAULT NULL COMMENT '支付成功时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `payment_no` (`payment_no`),
+  KEY `idx_pay_order` (`order_id`),
+  KEY `idx_payment_order_status` (`order_id`,`pay_status`),
+  CONSTRAINT `fk_pay_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COMMENT='支付记录表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `payment_record`
+--
+
+LOCK TABLES `payment_record` WRITE;
+/*!40000 ALTER TABLE `payment_record` DISABLE KEYS */;
+INSERT INTO `payment_record` VALUES (1,3,'PAY20260403135811023','MOCK',24.00,1,'MOCK-PAY20260403135811023','2026-04-03 13:58:18','2026-04-03 13:58:11','2026-04-03 13:58:18'),(2,4,'PAY20260409200442206','MOCK',36.00,1,'MOCK-PAY20260409200442206','2026-04-09 20:04:50','2026-04-09 20:04:42','2026-04-09 20:04:50'),(3,5,'PAY20260421140901754','MOCK',45.00,1,'MOCK-PAY20260421140901754','2026-04-21 14:09:12','2026-04-21 14:09:01','2026-04-21 14:09:12'),(4,6,'PAY20260425222030263','MOCK',12.00,1,'MOCK-PAY20260425222030263','2026-04-25 22:20:49','2026-04-25 22:20:30','2026-04-25 22:20:49'),(5,7,'PAY20260504140020210','MOCK',30.00,1,'MOCK-PAY20260504140020210','2026-05-04 14:00:30','2026-05-04 14:00:20','2026-05-04 14:00:30'),(6,8,'PAY20260504143029709','MOCK',45.00,1,'MOCK-PAY20260504143029709','2026-05-04 14:30:29','2026-05-04 14:30:29','2026-05-04 14:30:29'),(7,9,'PAY20260504143220751','MOCK',30.00,1,'MOCK-PAY20260504143220751','2026-05-04 14:32:20','2026-05-04 14:32:20','2026-05-04 14:32:20');
+/*!40000 ALTER TABLE `payment_record` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `permission`
+--
+
+DROP TABLE IF EXISTS `permission`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `permission` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '权限ID',
+  `perm_name` varchar(100) NOT NULL COMMENT '权限名',
+  `perm_code` varchar(100) NOT NULL COMMENT '权限编码',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `perm_code` (`perm_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COMMENT='权限表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `permission`
+--
+
+LOCK TABLES `permission` WRITE;
+/*!40000 ALTER TABLE `permission` DISABLE KEYS */;
+INSERT INTO `permission` VALUES (1,'菜品管理','dish:manage','2026-04-01 01:11:58','2026-04-01 01:11:58'),(2,'员工管理','employee:manage','2026-04-01 01:11:58','2026-04-01 01:11:58'),(3,'店铺状态管理','shop:status:update','2026-04-01 01:11:58','2026-04-01 01:11:58'),(4,'订单处理','order:manage','2026-04-01 01:11:58','2026-04-01 01:11:58');
+/*!40000 ALTER TABLE `permission` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `rider`
+--
+
+DROP TABLE IF EXISTS `rider`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `rider` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '骑手ID',
+  `username` varchar(50) NOT NULL COMMENT '登录账号',
+  `password` varchar(100) NOT NULL COMMENT '密码(加密后)',
+  `real_name` varchar(50) NOT NULL COMMENT '姓名',
+  `phone` varchar(20) DEFAULT NULL COMMENT '手机号',
+  `enabled` tinyint(4) NOT NULL DEFAULT '1' COMMENT '启用状态 1启用 0禁用',
+  `work_status` varchar(20) NOT NULL DEFAULT 'ONLINE' COMMENT '工作状态 ONLINE/OFFLINE',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`),
+  UNIQUE KEY `phone` (`phone`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COMMENT='骑手表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `rider`
+--
+
+LOCK TABLES `rider` WRITE;
+/*!40000 ALTER TABLE `rider` DISABLE KEYS */;
+INSERT INTO `rider` VALUES (1,'rider01','$2a$10$FsoODkPuGj26CrGK9uXpU.TrmVRB80WDUm0OaeXAtEwx/v9.V4foa','默认骑手','13900000009',1,'ONLINE','2026-05-01 23:49:58','2026-05-01 23:49:58'),(4,'rider','$2a$10$UGS0deNUG/GYVxhahHAhMOfeHqkbCRdmFsxtnlNF6uqFoZFrEYfWy','张三','12345674567',1,'ONLINE','2026-05-01 23:56:45','2026-05-01 23:56:45');
+/*!40000 ALTER TABLE `rider` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `role`
+--
+
+DROP TABLE IF EXISTS `role`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `role` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '角色ID',
+  `role_name` varchar(50) NOT NULL COMMENT '角色名',
+  `role_code` varchar(50) NOT NULL COMMENT '角色编码',
+  `status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '状态 1启用 0禁用',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `role_name` (`role_name`),
+  UNIQUE KEY `role_code` (`role_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `role`
+--
+
+LOCK TABLES `role` WRITE;
+/*!40000 ALTER TABLE `role` DISABLE KEYS */;
+INSERT INTO `role` VALUES (1,'超级管理员','SUPER_ADMIN',1,'2026-04-01 01:11:58','2026-04-01 01:11:58'),(2,'店长','SHOP_MANAGER',1,'2026-04-01 01:11:58','2026-04-01 01:11:58'),(3,'员工','STAFF',1,'2026-04-01 01:11:58','2026-04-01 01:11:58');
+/*!40000 ALTER TABLE `role` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `role_permission`
+--
+
+DROP TABLE IF EXISTS `role_permission`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `role_permission` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `role_id` bigint(20) NOT NULL,
+  `permission_id` bigint(20) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_role_perm` (`role_id`,`permission_id`),
+  KEY `fk_rp_perm` (`permission_id`),
+  CONSTRAINT `fk_rp_perm` FOREIGN KEY (`permission_id`) REFERENCES `permission` (`id`),
+  CONSTRAINT `fk_rp_role` FOREIGN KEY (`role_id`) REFERENCES `role` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COMMENT='角色权限关联表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `role_permission`
+--
+
+LOCK TABLES `role_permission` WRITE;
+/*!40000 ALTER TABLE `role_permission` DISABLE KEYS */;
+INSERT INTO `role_permission` VALUES (34,1,1),(35,1,2),(37,1,3),(36,1,4),(41,2,1),(42,2,2),(44,2,3),(43,2,4),(48,3,1),(49,3,4);
+/*!40000 ALTER TABLE `role_permission` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `user`
+--
+
+DROP TABLE IF EXISTS `user`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+  `username` varchar(50) NOT NULL COMMENT '用户名',
+  `password` varchar(100) NOT NULL COMMENT '密码(加密后)',
+  `phone` varchar(20) DEFAULT NULL COMMENT '手机号',
+  `nickname` varchar(50) DEFAULT NULL COMMENT '昵称',
+  `avatar` varchar(255) DEFAULT NULL COMMENT '头像URL',
+  `receiver_name` varchar(50) DEFAULT NULL COMMENT '收货人',
+  `shipping_phone` varchar(20) DEFAULT NULL COMMENT '收货电话',
+  `shipping_address` varchar(500) DEFAULT NULL COMMENT '收货详细地址',
+  `shipping_lat` decimal(10,7) DEFAULT NULL COMMENT '纬度',
+  `shipping_lng` decimal(10,7) DEFAULT NULL COMMENT '经度',
+  `status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '状态 1正常 0禁用',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`),
+  UNIQUE KEY `phone` (`phone`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user`
+--
+
+LOCK TABLES `user` WRITE;
+/*!40000 ALTER TABLE `user` DISABLE KEYS */;
+INSERT INTO `user` VALUES (1,'testuser','$2a$10$FsoODkPuGj26CrGK9uXpU.TrmVRB80WDUm0OaeXAtEwx/v9.V4foa','13700000000','测试用户',NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-04-01 01:17:35','2026-04-02 14:08:52'),(2,'u1','$2a$10$LCOzLV3TS/9m8p5zrpoRw.nw0YePWxOMbf0QhE.Z7ljWfofpGH2ey','13600000001','小明',NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-04-01 17:40:54','2026-04-01 17:40:54'),(4,'root','$2a$10$WRyjidW5larq2KvtTBl4WOLHZ0jhKFz4rEhJehRIeDGNdyZWXW5SC',NULL,'羽落','/uploads/u-f97f361c7fdc4ca8a227537593be32f4.jpg','苏羽落','12345674567','大连工业大学, 松江路, 泡崖街道, 前革镇堡, 甘井子区, 大连市, 辽宁省, 116033, 中国',38.9721594,121.5277367,1,'2026-04-02 12:58:05','2026-04-21 12:46:27');
+/*!40000 ALTER TABLE `user` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping routines for database 'yueshihui'
+--
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2026-05-06 16:51:14
