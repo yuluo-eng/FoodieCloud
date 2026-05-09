@@ -1,5 +1,7 @@
 package com.example.springbootblank.admin.controller;
 
+import com.example.springbootblank.admin.dto.AdminEmployeeBootstrapRequest;
+import com.example.springbootblank.admin.dto.AdminShopCreateRequest;
 import com.example.springbootblank.admin.service.AdminService;
 import com.example.springbootblank.auth.security.MerchantAuthGuard;
 import com.example.springbootblank.common.api.ApiResponse;
@@ -79,6 +81,25 @@ public class AdminController {
             @RequestHeader(value = "Authorization", required = false) String auth) {
         requireSuperAdmin(auth);
         return ApiResponse.ok(adminService.listShops());
+    }
+
+    @PostMapping("/shops")
+    public ApiResponse<Map<String, Object>> createShop(
+            @RequestHeader(value = "Authorization", required = false) String auth,
+            @RequestBody AdminShopCreateRequest req
+    ) {
+        requireSuperAdmin(auth);
+        return ApiResponse.ok(adminService.createShop(req));
+    }
+
+    @PostMapping("/shops/{shopId}/employees/bootstrap")
+    public ApiResponse<Map<String, Object>> bootstrapShopEmployee(
+            @RequestHeader(value = "Authorization", required = false) String auth,
+            @PathVariable long shopId,
+            @RequestBody AdminEmployeeBootstrapRequest req
+    ) {
+        requireSuperAdmin(auth);
+        return ApiResponse.ok(adminService.bootstrapShopEmployee(shopId, req));
     }
 
     @PatchMapping("/shops/{id}/toggle")

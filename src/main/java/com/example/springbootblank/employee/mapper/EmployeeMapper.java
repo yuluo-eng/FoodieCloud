@@ -20,6 +20,8 @@ public interface EmployeeMapper {
                                  @Param("offset") int offset,
                                  @Param("pageSize") int pageSize);
 
+    Employee findById(@Param("id") Long id);
+
     int insertEmployee(Employee employee);
 
     int updateEmployee(@Param("id") Long id, @Param("employee") Employee employee);

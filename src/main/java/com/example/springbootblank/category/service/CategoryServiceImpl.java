@@ -1,5 +1,6 @@
 package com.example.springbootblank.category.service;
 
+import com.example.springbootblank.auth.security.JwtService;
 import com.example.springbootblank.auth.security.MerchantAuthGuard;
 import com.example.springbootblank.category.dto.CategoryCreateRequest;
 import com.example.springbootblank.category.dto.CategoryUpdateRequest;
@@ -26,6 +27,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public List<Map<String, Object>> list(String authorization, Long shopId) {
         ensureManager(authorization);
+        merchantAuthGuard.requireShopAccess(authorization, shopId);
         return categoryMapper.listByShopId(shopId).stream().map(c -> {
             Map<String, Object> item = new HashMap<>();
             item.put("id", c.getId());
@@ -56,6 +58,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public Map<String, Object> create(String authorization, CategoryCreateRequest req) {
         ensureManager(authorization);
+        merchantAuthGuard.requireShopAccess(authorization, req.shopId());
         DishCategory c = new DishCategory();
         c.setShopId(req.shopId());
         c.setCategoryName(req.categoryName());
@@ -68,8 +71,20 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public void update(String authorization, Long id, CategoryUpdateRequest req) {
         ensureManager(authorization);
+        DishCategory existing = categoryMapper.findById(id);
+        if (existing == null) {
+            throw new BusinessException(404, "分类不存在");
+        }
+        merchantAuthGuard.requireShopAccess(authorization, existing.getShopId());
+        if (req.shopId() != null && !req.shopId().equals(existing.getShopId())) {
+            JwtService.JwtPrincipal p = merchantAuthGuard.requireEmployee(authorization);
+            if (!merchantAuthGuard.isPlatformSuperAdmin(p)) {
+                throw new BusinessException(403, "无权变更分类所属店铺");
+            }
+            merchantAuthGuard.requireShopAccess(authorization, req.shopId());
+        }
         DishCategory c = new DishCategory();
-        c.setShopId(req.shopId());
+        c.setShopId(req.shopId() != null ? req.shopId() : existing.getShopId());
         c.setCategoryName(req.categoryName());
         c.setSort(req.sort());
         c.setStatus(req.status());
@@ -82,6 +97,11 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public void delete(String authorization, Long id) {
         ensureManager(authorization);
+        DishCategory existing = categoryMapper.findById(id);
+        if (existing == null) {
+            throw new BusinessException(404, "分类不存在");
+        }
+        merchantAuthGuard.requireShopAccess(authorization, existing.getShopId());
         if (categoryMapper.countDishByCategory(id) > 0) {
             throw new BusinessException(400, "分类下有菜品，无法删除");
         }

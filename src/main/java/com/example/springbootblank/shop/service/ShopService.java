@@ -3,9 +3,12 @@ package com.example.springbootblank.shop.service;
 import com.example.springbootblank.shop.dto.ShopBusinessStatusUpdateRequest;
 import com.example.springbootblank.shop.dto.ShopUpdateRequest;
 
+import java.util.List;
 import java.util.Map;
 
 public interface ShopService {
+
+    List<Map<String, Object>> listUserShopOverviews();
 
     Map<String, Object> getShop(String authorization, Long shopId);
 

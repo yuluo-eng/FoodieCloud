@@ -102,6 +102,11 @@
         ORDER BY id ASC
     </select>
 
+    <insert id="insertShop" useGeneratedKeys="true" keyProperty="shop.id">
+        INSERT INTO merchant_shop (shop_name, address, phone, business_status, notice)
+        VALUES (#{shop.shopName}, #{shop.address}, #{shop.phone}, #{shop.businessStatus}, #{shop.notice})
+    </insert>
+
     <update id="updateShopBusinessStatus">
         UPDATE merchant_shop SET business_status = #{businessStatus} WHERE id = #{id}
     </update>

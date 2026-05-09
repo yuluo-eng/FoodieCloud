@@ -2,6 +2,14 @@
 
 ---
 
+# 增量（2026-05）：平台代入驻 + 多店数据隔离
+
+**摘要**：管理端增加 `POST /api/admin/shops`、 `POST /api/admin/shops/{shopId}/employees/bootstrap`；`MerchantAuthGuard` 对普通员工强制本店、对 `SUPER_ADMIN` 允许跨店；商家看板 `GET /api/merchant/dashboard/stats` 支持可选 `shopId`；管理后台「商家管理」页提供新建店铺与创建店长表单。
+
+**文档**：`docs/后端接口文档.md`（接口约定多店铺说明、§10 详述、§2.4 看板）、`docs/development-documentation.md`、`docs/checklist.md`、`README.md`、`frontend/前端说明.md` 已同步。
+
+---
+
 # 第 1 批：后端安全 + 库存闭环
 
 涉及 Issues: #3, #4, #5, #6, #7, #8

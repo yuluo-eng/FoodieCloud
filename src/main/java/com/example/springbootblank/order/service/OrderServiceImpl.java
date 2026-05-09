@@ -182,14 +182,13 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void acceptOrder(String authorization, Long orderId, String deliveryMode) {
-        Long shopId = merchantAuthGuard.resolveShopId(authorization);
-        ensureOrderBelongsToShop(orderId, shopId);
+        Order order = orderMapper.findOrderById(orderId);
+        if (order == null) {
+            throw new BusinessException(404, "订单不存在");
+        }
+        merchantAuthGuard.requireShopAccess(authorization, order.getShopId());
 
         if ("RIDER".equalsIgnoreCase(deliveryMode)) {
-            Order order = orderMapper.findOrderById(orderId);
-            if (order == null) {
-                throw new BusinessException(404, "订单不存在");
-            }
             if (order.getStatus() != 1) {
                 throw new BusinessException(400, "仅已支付订单可操作");
             }
@@ -212,8 +211,11 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void deliveryOrder(String authorization, Long orderId) {
-        Long shopId = merchantAuthGuard.resolveShopId(authorization);
-        ensureOrderBelongsToShop(orderId, shopId);
+        Order order = orderMapper.findOrderById(orderId);
+        if (order == null) {
+            throw new BusinessException(404, "订单不存在");
+        }
+        merchantAuthGuard.requireShopAccess(authorization, order.getShopId());
         applyMerchantStatusTransition(
                 orderId,
                 2,
@@ -225,8 +227,11 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void finishOrder(String authorization, Long orderId) {
-        Long shopId = merchantAuthGuard.resolveShopId(authorization);
-        ensureOrderBelongsToShop(orderId, shopId);
+        Order order = orderMapper.findOrderById(orderId);
+        if (order == null) {
+            throw new BusinessException(404, "订单不存在");
+        }
+        merchantAuthGuard.requireShopAccess(authorization, order.getShopId());
         applyMerchantStatusTransition(
                 orderId,
                 3,

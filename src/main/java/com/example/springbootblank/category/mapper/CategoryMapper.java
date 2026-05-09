@@ -11,6 +11,8 @@ public interface CategoryMapper {
 
     List<DishCategory> listByShopId(@Param("shopId") Long shopId);
 
+    DishCategory findById(@Param("id") Long id);
+
     int insertCategory(DishCategory category);
 
     int updateCategory(@Param("id") Long id, @Param("category") DishCategory category);

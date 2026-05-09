@@ -3,7 +3,6 @@ package com.example.springbootblank.dashboard.controller;
 import com.example.springbootblank.auth.mapper.AuthMapper;
 import com.example.springbootblank.auth.security.MerchantAuthGuard;
 import com.example.springbootblank.common.api.ApiResponse;
-import com.example.springbootblank.common.error.BusinessException;
 import com.example.springbootblank.dish.mapper.DishMapper;
 import com.example.springbootblank.employee.entity.Employee;
 import com.example.springbootblank.employee.mapper.EmployeeMapper;
@@ -11,6 +10,7 @@ import com.example.springbootblank.order.mapper.OrderMapper;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
@@ -44,12 +44,20 @@ public class MerchantDashboardController {
 
     @GetMapping("/stats")
     public ApiResponse<Map<String, Object>> stats(
-            @RequestHeader(value = "Authorization", required = false) String authorization
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam(required = false) Long shopId
     ) {
         var principal = merchantAuthGuard.requireEmployeeRole(authorization, "SUPER_ADMIN", "SHOP_MANAGER", "STAFF");
 
         Employee employee = authMapper.findEmployeeByIdWithRole(principal.id());
-        if (employee == null || employee.getShopId() == null) {
+        Long effectiveShopId = shopId;
+        if (effectiveShopId != null) {
+            merchantAuthGuard.requireShopAccess(authorization, effectiveShopId);
+        } else if (employee != null && employee.getShopId() != null) {
+            effectiveShopId = employee.getShopId();
+        }
+
+        if (effectiveShopId == null) {
             // 数据脏时不要直接打断页面渲染（前端统计卡片兜底为 0）
             Map<String, Object> data = new HashMap<>();
             data.put("totalOrders", 0L);
@@ -58,7 +66,6 @@ public class MerchantDashboardController {
             data.put("totalDishes", 0L);
             return ApiResponse.ok(data);
         }
-        Long shopId = employee.getShopId();
 
         // 统计“今天”的口径：pay_time 落在本地时区今天 00:00~明天 00:00
         ZoneId zone = ZoneId.of("Asia/Shanghai");
@@ -66,11 +73,11 @@ public class MerchantDashboardController {
         LocalDateTime start = today.atStartOfDay();
         LocalDateTime end = start.plusDays(1);
 
-        long totalOrders = orderMapper.countMerchantOrdersPaidToday(shopId, start, end);
-        BigDecimal totalRevenue = orderMapper.sumMerchantRevenuePaidToday(shopId, start, end);
+        long totalOrders = orderMapper.countMerchantOrdersPaidToday(effectiveShopId, start, end);
+        BigDecimal totalRevenue = orderMapper.sumMerchantRevenuePaidToday(effectiveShopId, start, end);
 
-        long totalEmployees = employeeMapper.countEmployees(shopId, null, 1);
-        long totalDishes = dishMapper.countMerchantDishes(shopId, null, null, 1);
+        long totalEmployees = employeeMapper.countEmployees(effectiveShopId, null, 1);
+        long totalDishes = dishMapper.countMerchantDishes(effectiveShopId, null, null, 1);
 
         Map<String, Object> data = new HashMap<>();
         data.put("totalOrders", totalOrders);

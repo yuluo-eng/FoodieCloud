@@ -40,6 +40,23 @@
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
+    <select id="findById" resultType="com.example.springbootblank.employee.entity.Employee">
+        SELECT e.id,
+               e.username,
+               e.password,
+               e.real_name,
+               e.phone,
+               e.shop_id,
+               e.role_id,
+               e.enabled,
+               e.create_time,
+               e.update_time,
+               r.role_code AS role_code
+        FROM employee e
+                 INNER JOIN role r ON e.role_id = r.id
+        WHERE e.id = #{id}
+    </select>
+
     <insert id="insertEmployee" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO employee (username, password, real_name, phone, shop_id, role_id, enabled)
         VALUES (#{username}, #{password}, #{realName}, #{phone}, #{shopId}, #{roleId}, #{enabled})

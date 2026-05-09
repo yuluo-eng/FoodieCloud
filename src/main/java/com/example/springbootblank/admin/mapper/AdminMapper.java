@@ -41,5 +41,7 @@ public interface AdminMapper {
 
     List<Shop> listShops();
 
+    int insertShop(@Param("shop") Shop shop);
+
     int updateShopBusinessStatus(@Param("id") long id, @Param("businessStatus") int businessStatus);
 }

@@ -18,6 +18,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -98,7 +101,7 @@ class RiderOrderFulfillmentServiceTest {
 
     @Test
     void merchantDeliveryShouldReturn422WhenOrderAssignedToRider() {
-        when(merchantAuthGuard.resolveShopId("Bearer emp-token")).thenReturn(1L);
+        doNothing().when(merchantAuthGuard).requireShopAccess(any(), eq(1L));
         Order shopOrder = new Order();
         shopOrder.setId(200L);
         shopOrder.setShopId(1L);

@@ -98,7 +98,7 @@ class OrderFlowIntegrationTest {
         verify(dishMapper).deductStock(10L, 2);
 
         // 3) Merchant accepts order
-        when(merchantAuthGuard.resolveShopId(MERCHANT_AUTH)).thenReturn(SHOP_ID);
+        doNothing().when(merchantAuthGuard).requireShopAccess(any(), eq(SHOP_ID));
         Order paidOrder = new Order();
         paidOrder.setId(ORDER_ID);
         paidOrder.setShopId(SHOP_ID);
@@ -106,7 +106,7 @@ class OrderFlowIntegrationTest {
         when(orderMapper.findOrderById(ORDER_ID)).thenReturn(paidOrder);
         when(orderMapper.updateOrderStatusMerchant(ORDER_ID, 1, 2)).thenReturn(1);
 
-        orderService.acceptOrder(MERCHANT_AUTH, ORDER_ID);
+        orderService.acceptOrder(MERCHANT_AUTH, ORDER_ID, null);
         verify(orderMapper).updateOrderStatusMerchant(ORDER_ID, 1, 2);
 
         // 4) Merchant delivers

@@ -23,7 +23,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -109,14 +112,14 @@ class OrderServiceImplTest {
 
     @Test
     void acceptOrderShouldSucceedAndLog() {
-        when(merchantAuthGuard.resolveShopId("Bearer emp")).thenReturn(1L);
         Order o = new Order();
         o.setId(500L);
         o.setShopId(1L);
         when(orderMapper.findOrderById(500L)).thenReturn(o);
+        doNothing().when(merchantAuthGuard).requireShopAccess(any(), eq(1L));
         when(orderMapper.updateOrderStatusMerchant(500L, 1, 2)).thenReturn(1);
 
-        orderService.acceptOrder("Bearer emp", 500L);
+        orderService.acceptOrder("Bearer emp", 500L, null);
 
         verify(orderMapper).updateOrderStatusMerchant(500L, 1, 2);
         verify(opLogService).log(any(), any(), any(), any(), any());
@@ -124,14 +127,15 @@ class OrderServiceImplTest {
 
     @Test
     void acceptOrderShouldThrowWhenShopMismatch() {
-        when(merchantAuthGuard.resolveShopId("Bearer emp")).thenReturn(1L);
         Order o = new Order();
         o.setId(500L);
         o.setShopId(99L);
         when(orderMapper.findOrderById(500L)).thenReturn(o);
+        doThrow(new BusinessException(403, "无权访问该店铺数据"))
+                .when(merchantAuthGuard).requireShopAccess(any(), eq(99L));
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> orderService.acceptOrder("Bearer emp", 500L));
+                () -> orderService.acceptOrder("Bearer emp", 500L, null));
         assertEquals(403, ex.getCode());
     }
 }

@@ -1,6 +1,7 @@
 package com.example.springbootblank.dish.service;
 
 import com.example.springbootblank.auth.security.MerchantAuthGuard;
+import com.example.springbootblank.common.error.BusinessException;
 import com.example.springbootblank.dish.dto.DishCreateRequest;
 import com.example.springbootblank.dish.dto.DishStatusUpdateRequest;
 import com.example.springbootblank.dish.dto.DishUpdateRequest;
@@ -42,6 +43,7 @@ public class DishServiceImpl implements DishService {
     @Override
     public Map<String, Object> merchantDishes(String authorization, int page, int pageSize, Long shopId, Long categoryId, String dishName, Integer status) {
         ensureDishOperator(authorization);
+        merchantAuthGuard.requireShopAccess(authorization, shopId);
         int safePage = Math.max(page, 1);
         int safePageSize = Math.max(pageSize, 1);
         int offset = (safePage - 1) * safePageSize;
@@ -61,6 +63,7 @@ public class DishServiceImpl implements DishService {
     @Override
     public Map<String, Object> createDish(String authorization, DishCreateRequest req) {
         ensureDishOperator(authorization);
+        merchantAuthGuard.requireShopAccess(authorization, req.shopId());
         Dish dish = new Dish();
         dish.setShopId(req.shopId());
         dish.setCategoryId(req.categoryId());
@@ -81,7 +84,12 @@ public class DishServiceImpl implements DishService {
         ensureDishOperator(authorization);
 
         Dish oldDish = dishMapper.findById(id);
-        String oldImage = oldDish != null ? oldDish.getImageUrl() : null;
+        if (oldDish == null) {
+            throw new BusinessException(404, "菜品不存在");
+        }
+        merchantAuthGuard.requireShopAccess(authorization, oldDish.getShopId());
+        merchantAuthGuard.requireShopAccess(authorization, req.shopId());
+        String oldImage = oldDish.getImageUrl();
 
         Dish dish = new Dish();
         dish.setShopId(req.shopId());
@@ -104,6 +112,11 @@ public class DishServiceImpl implements DishService {
     @Override
     public void deleteDish(String authorization, Long id) {
         ensureDishOperator(authorization);
+        Dish existing = dishMapper.findById(id);
+        if (existing == null) {
+            throw new BusinessException(404, "菜品不存在");
+        }
+        merchantAuthGuard.requireShopAccess(authorization, existing.getShopId());
         dishMapper.deleteDish(id);
         opLogService.log("EMPLOYEE", null, "DISH", "DELETE", "删除菜品: ID=" + id);
     }
@@ -111,6 +124,11 @@ public class DishServiceImpl implements DishService {
     @Override
     public void updateDishStatus(String authorization, Long id, DishStatusUpdateRequest req) {
         ensureDishOperator(authorization);
+        Dish existing = dishMapper.findById(id);
+        if (existing == null) {
+            throw new BusinessException(404, "菜品不存在");
+        }
+        merchantAuthGuard.requireShopAccess(authorization, existing.getShopId());
         dishMapper.updateDishStatus(id, req.status());
     }
 

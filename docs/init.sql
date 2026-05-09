@@ -206,6 +206,24 @@ ON DUPLICATE KEY UPDATE
   business_status = VALUES(business_status),
   notice = VALUES(notice);
 
+INSERT INTO merchant_shop (id, shop_name, address, phone, business_status, notice)
+VALUES (2, '江南小厨', 'XX大学南门美食街8号', '13800000001', 1, '现炒现做，口味清爽')
+ON DUPLICATE KEY UPDATE
+  shop_name = VALUES(shop_name),
+  address = VALUES(address),
+  phone = VALUES(phone),
+  business_status = VALUES(business_status),
+  notice = VALUES(notice);
+
+INSERT INTO merchant_shop (id, shop_name, address, phone, business_status, notice)
+VALUES (3, '韩味食堂', 'XX大学北门创业广场3楼', '13800000002', 1, '韩式风味，人气套餐')
+ON DUPLICATE KEY UPDATE
+  shop_name = VALUES(shop_name),
+  address = VALUES(address),
+  phone = VALUES(phone),
+  business_status = VALUES(business_status),
+  notice = VALUES(notice);
+
 INSERT INTO role (id, role_name, role_code, status) VALUES
 (1, '超级管理员', 'SUPER_ADMIN', 1),
 (2, '店长', 'SHOP_MANAGER', 1),
@@ -276,6 +294,42 @@ WHERE NOT EXISTS (
   SELECT 1 FROM dish_category WHERE shop_id = 1 AND category_name = '饮品'
 );
 
+INSERT INTO dish_category (shop_id, category_name, sort, status)
+SELECT 2, '主食', 1, 1
+WHERE NOT EXISTS (
+  SELECT 1 FROM dish_category WHERE shop_id = 2 AND category_name = '主食'
+);
+
+INSERT INTO dish_category (shop_id, category_name, sort, status)
+SELECT 2, '小吃', 2, 1
+WHERE NOT EXISTS (
+  SELECT 1 FROM dish_category WHERE shop_id = 2 AND category_name = '小吃'
+);
+
+INSERT INTO dish_category (shop_id, category_name, sort, status)
+SELECT 2, '饮品', 3, 1
+WHERE NOT EXISTS (
+  SELECT 1 FROM dish_category WHERE shop_id = 2 AND category_name = '饮品'
+);
+
+INSERT INTO dish_category (shop_id, category_name, sort, status)
+SELECT 3, '主食', 1, 1
+WHERE NOT EXISTS (
+  SELECT 1 FROM dish_category WHERE shop_id = 3 AND category_name = '主食'
+);
+
+INSERT INTO dish_category (shop_id, category_name, sort, status)
+SELECT 3, '小吃', 2, 1
+WHERE NOT EXISTS (
+  SELECT 1 FROM dish_category WHERE shop_id = 3 AND category_name = '小吃'
+);
+
+INSERT INTO dish_category (shop_id, category_name, sort, status)
+SELECT 3, '饮品', 3, 1
+WHERE NOT EXISTS (
+  SELECT 1 FROM dish_category WHERE shop_id = 3 AND category_name = '饮品'
+);
+
 INSERT INTO dish (shop_id, category_id, dish_name, price, image_url, description, stock, status)
 SELECT 1, dc.id, '招牌牛肉饭', 18.00, '/dishes/beef-rice-bowl.jpg', '畅销款', 100, 1
 FROM dish_category dc
@@ -301,6 +355,60 @@ WHERE dc.shop_id = 1
   AND dc.category_name = '饮品'
   AND NOT EXISTS (
     SELECT 1 FROM dish d WHERE d.shop_id = 1 AND d.dish_name = '柠檬红茶'
+  );
+
+INSERT INTO dish (shop_id, category_id, dish_name, price, image_url, description, stock, status)
+SELECT 2, dc.id, '葱香排骨饭', 19.00, 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80', '江南风味，咸香下饭', 100, 1
+FROM dish_category dc
+WHERE dc.shop_id = 2
+  AND dc.category_name = '主食'
+  AND NOT EXISTS (
+    SELECT 1 FROM dish d WHERE d.shop_id = 2 AND d.dish_name = '葱香排骨饭'
+  );
+
+INSERT INTO dish (shop_id, category_id, dish_name, price, image_url, description, stock, status)
+SELECT 2, dc.id, '桂花糖藕', 11.00, 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=1200&q=80', '软糯清甜，江南特色', 100, 1
+FROM dish_category dc
+WHERE dc.shop_id = 2
+  AND dc.category_name = '小吃'
+  AND NOT EXISTS (
+    SELECT 1 FROM dish d WHERE d.shop_id = 2 AND d.dish_name = '桂花糖藕'
+  );
+
+INSERT INTO dish (shop_id, category_id, dish_name, price, image_url, description, stock, status)
+SELECT 2, dc.id, '青梅苏打', 8.00, 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=1200&q=80', '清爽解腻，夏日推荐', 100, 1
+FROM dish_category dc
+WHERE dc.shop_id = 2
+  AND dc.category_name = '饮品'
+  AND NOT EXISTS (
+    SELECT 1 FROM dish d WHERE d.shop_id = 2 AND d.dish_name = '青梅苏打'
+  );
+
+INSERT INTO dish (shop_id, category_id, dish_name, price, image_url, description, stock, status)
+SELECT 3, dc.id, '韩式石锅拌饭', 22.00, 'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&w=1200&q=80', '经典韩式主食，配菜丰富', 100, 1
+FROM dish_category dc
+WHERE dc.shop_id = 3
+  AND dc.category_name = '主食'
+  AND NOT EXISTS (
+    SELECT 1 FROM dish d WHERE d.shop_id = 3 AND d.dish_name = '韩式石锅拌饭'
+  );
+
+INSERT INTO dish (shop_id, category_id, dish_name, price, image_url, description, stock, status)
+SELECT 3, dc.id, '韩式炸鸡块', 16.00, 'https://images.unsplash.com/photo-1562967916-eb82221dfb92?auto=format&fit=crop&w=1200&q=80', '外酥里嫩，甜辣口味', 100, 1
+FROM dish_category dc
+WHERE dc.shop_id = 3
+  AND dc.category_name = '小吃'
+  AND NOT EXISTS (
+    SELECT 1 FROM dish d WHERE d.shop_id = 3 AND d.dish_name = '韩式炸鸡块'
+  );
+
+INSERT INTO dish (shop_id, category_id, dish_name, price, image_url, description, stock, status)
+SELECT 3, dc.id, '柚子蜂蜜茶', 9.00, 'https://images.unsplash.com/photo-1571934811356-5cc061b6821f?auto=format&fit=crop&w=1200&q=80', '韩式茶饮，酸甜回甘', 100, 1
+FROM dish_category dc
+WHERE dc.shop_id = 3
+  AND dc.category_name = '饮品'
+  AND NOT EXISTS (
+    SELECT 1 FROM dish d WHERE d.shop_id = 3 AND d.dish_name = '柚子蜂蜜茶'
   );
 
 -- =========================

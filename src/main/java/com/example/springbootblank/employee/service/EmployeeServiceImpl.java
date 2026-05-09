@@ -1,5 +1,6 @@
 package com.example.springbootblank.employee.service;
 
+import com.example.springbootblank.auth.security.JwtService;
 import com.example.springbootblank.auth.security.MerchantAuthGuard;
 import com.example.springbootblank.common.error.BusinessException;
 import com.example.springbootblank.employee.dto.EmployeeCreateRequest;
@@ -38,6 +39,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                                               String realName,
                                               Integer enabled) {
         ensureManager(authorization);
+        merchantAuthGuard.requireShopAccess(authorization, shopId);
         int safePage = Math.max(page, 1);
         int safePageSize = Math.max(pageSize, 1);
         int offset = (safePage - 1) * safePageSize;
@@ -57,6 +59,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public Map<String, Object> createEmployee(String authorization, EmployeeCreateRequest req) {
         ensureManager(authorization);
+        merchantAuthGuard.requireShopAccess(authorization, req.shopId());
         if (employeeMapper.countByUsername(req.username()) > 0) {
             throw new BusinessException(400, "账号已存在");
         }
@@ -80,10 +83,22 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public void updateEmployee(String authorization, Long id, EmployeeUpdateRequest req) {
         ensureManager(authorization);
+        Employee existing = employeeMapper.findById(id);
+        if (existing == null) {
+            throw new BusinessException(404, "员工不存在");
+        }
+        merchantAuthGuard.requireShopAccess(authorization, existing.getShopId());
+        if (req.shopId() != null && !req.shopId().equals(existing.getShopId())) {
+            JwtService.JwtPrincipal p = merchantAuthGuard.requireEmployee(authorization);
+            if (!merchantAuthGuard.isPlatformSuperAdmin(p)) {
+                throw new BusinessException(403, "无权变更员工所属店铺");
+            }
+            merchantAuthGuard.requireShopAccess(authorization, req.shopId());
+        }
         Employee employee = new Employee();
         employee.setRealName(req.realName());
         employee.setPhone(req.phone());
-        employee.setShopId(req.shopId());
+        employee.setShopId(req.shopId() != null ? req.shopId() : existing.getShopId());
         employee.setRoleId(req.roleId());
         employee.setEnabled(req.enabled());
         employeeMapper.updateEmployee(id, employee);
@@ -92,12 +107,22 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public void deleteEmployee(String authorization, Long id) {
         ensureManager(authorization);
+        Employee existing = employeeMapper.findById(id);
+        if (existing == null) {
+            throw new BusinessException(404, "员工不存在");
+        }
+        merchantAuthGuard.requireShopAccess(authorization, existing.getShopId());
         employeeMapper.deleteEmployee(id);
     }
 
     @Override
     public void updateEmployeeEnabled(String authorization, Long id, EmployeeEnabledUpdateRequest req) {
         ensureManager(authorization);
+        Employee existing = employeeMapper.findById(id);
+        if (existing == null) {
+            throw new BusinessException(404, "员工不存在");
+        }
+        merchantAuthGuard.requireShopAccess(authorization, existing.getShopId());
         employeeMapper.updateEmployeeEnabled(id, req.enabled());
     }
 

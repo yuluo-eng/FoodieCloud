@@ -10,6 +10,33 @@
         ORDER BY id ASC
     </select>
 
+    <select id="listUserShopOverviews" resultType="map">
+        SELECT
+            s.id,
+            s.shop_name AS shopName,
+            s.address,
+            s.phone,
+            s.business_status AS businessStatus,
+            s.notice,
+            COUNT(DISTINCT dc.id) AS categoryCount,
+            COUNT(DISTINCT d.id) AS dishCount,
+            COALESCE(MIN(d.price), 0) AS minPrice,
+            COALESCE(
+                SUBSTRING_INDEX(
+                    GROUP_CONCAT(DISTINCT d.dish_name ORDER BY d.id SEPARATOR '、'),
+                    '、',
+                    3
+                ),
+                ''
+            ) AS featuredDishes
+        FROM merchant_shop s
+        LEFT JOIN dish_category dc ON dc.shop_id = s.id AND dc.status = 1
+        LEFT JOIN dish d ON d.shop_id = s.id AND d.status = 1
+        WHERE s.business_status = 1
+        GROUP BY s.id, s.shop_name, s.address, s.phone, s.business_status, s.notice
+        ORDER BY s.id ASC
+    </select>
+
     <select id="findById" resultType="com.example.springbootblank.shop.entity.Shop">
         SELECT id, shop_name, address, phone, business_status, notice, create_time, update_time
         FROM merchant_shop

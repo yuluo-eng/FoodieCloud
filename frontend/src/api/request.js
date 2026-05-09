@@ -18,6 +18,16 @@ const HTTP_STATUS_MAP = {
   503: '服务维护中，请稍后重试',
 }
 
+/**
+ * 登录接口故意返回 401（账号密码错误），不应触发「清理 token + 整页跳登录」，
+ * 否则登录页会刷新，用户看不到错误提示。
+ */
+function isAuthLoginRequest(config) {
+  if (!config?.url) return false
+  const path = String(config.url).split('?')[0]
+  return /\/auth\/(user|employee|rider)\/login$/i.test(path)
+}
+
 function handleUnauthorized() {
   const p = window.location.pathname || ''
   if (p.startsWith('/merchant')) {
@@ -52,7 +62,7 @@ instance.interceptors.response.use(
   (res) => {
     const body = res.data
     if (body && typeof body.code === 'number' && body.code !== 200) {
-      if (body.code === 401) {
+      if (body.code === 401 && !isAuthLoginRequest(res.config)) {
         handleUnauthorized()
       }
       return Promise.reject(new Error(body.msg || HTTP_STATUS_MAP[body.code] || '请求失败'))
@@ -67,7 +77,7 @@ instance.interceptors.response.use(
       return Promise.reject(new Error('网络连接失败，请检查网络设置'))
     }
     const status = err.response.status
-    if (status === 401) {
+    if (status === 401 && !isAuthLoginRequest(err.config)) {
       handleUnauthorized()
     }
     const data = err.response?.data

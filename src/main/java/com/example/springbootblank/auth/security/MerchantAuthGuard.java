@@ -67,11 +67,36 @@ public class MerchantAuthGuard {
     }
 
     /**
+     * 平台超级管理员：可管理任意店铺（用于后台代入驻与跨店运维）。
+     */
+    public boolean isPlatformSuperAdmin(JwtService.JwtPrincipal principal) {
+        if (principal == null) {
+            return false;
+        }
+        if ("SUPER_ADMIN".equals(principal.roleCode())) {
+            return true;
+        }
+        // 与 requireEmployeeRole 的测试兜底保持一致
+        return "admin".equalsIgnoreCase(principal.username());
+    }
+
+    /**
      * Authenticate employee, resolve shopId, and verify it matches the requested shopId.
+     * 超级管理员可访问任意 shopId（仍会校验 shopId 非空）。
      */
     public void requireShopAccess(String authorizationHeader, Long requestedShopId) {
-        Long actualShopId = resolveShopId(authorizationHeader);
-        if (!actualShopId.equals(requestedShopId)) {
+        if (requestedShopId == null) {
+            throw new BusinessException(400, "shopId 不能为空");
+        }
+        JwtService.JwtPrincipal principal = requireEmployee(authorizationHeader);
+        if (isPlatformSuperAdmin(principal)) {
+            return;
+        }
+        Employee employee = authMapper.findEmployeeByIdWithRole(principal.id());
+        if (employee == null || employee.getShopId() == null) {
+            throw new BusinessException(403, "无权限：未绑定店铺");
+        }
+        if (!employee.getShopId().equals(requestedShopId)) {
             throw new BusinessException(403, "无权访问该店铺数据");
         }
     }

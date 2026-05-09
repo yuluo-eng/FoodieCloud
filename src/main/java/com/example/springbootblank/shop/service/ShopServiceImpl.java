@@ -8,6 +8,7 @@ import com.example.springbootblank.shop.entity.Shop;
 import com.example.springbootblank.shop.mapper.ShopMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,8 +24,14 @@ public class ShopServiceImpl implements ShopService {
     }
 
     @Override
+    public List<Map<String, Object>> listUserShopOverviews() {
+        return shopMapper.listUserShopOverviews();
+    }
+
+    @Override
     public Map<String, Object> getShop(String authorization, Long shopId) {
         ensureManager(authorization);
+        merchantAuthGuard.requireShopAccess(authorization, shopId);
         Shop shop = shopMapper.findById(shopId);
         if (shop == null) {
             throw new BusinessException(404, "店铺不存在");
@@ -42,6 +49,7 @@ public class ShopServiceImpl implements ShopService {
     @Override
     public void updateShop(String authorization, Long shopId, ShopUpdateRequest req) {
         ensureManager(authorization);
+        merchantAuthGuard.requireShopAccess(authorization, shopId);
         Shop shop = new Shop();
         shop.setShopName(req.shopName());
         shop.setAddress(req.address());
@@ -56,6 +64,7 @@ public class ShopServiceImpl implements ShopService {
     @Override
     public void updateBusinessStatus(String authorization, Long shopId, ShopBusinessStatusUpdateRequest req) {
         ensureManager(authorization);
+        merchantAuthGuard.requireShopAccess(authorization, shopId);
         if (req.businessStatus() == null || (req.businessStatus() != 0 && req.businessStatus() != 1)) {
             throw new BusinessException(400, "businessStatus 仅支持 0/1");
         }

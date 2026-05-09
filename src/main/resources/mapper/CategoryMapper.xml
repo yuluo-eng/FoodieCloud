@@ -4,10 +4,16 @@
 <mapper namespace="com.example.springbootblank.category.mapper.CategoryMapper">
 
     <select id="listByShopId" resultType="com.example.springbootblank.category.entity.DishCategory">
-        SELECT id, shop_id, category_name, sort, status, create_time, update_time
+        SELECT id, shop_id AS shopId, category_name AS categoryName, sort, status, create_time, update_time
         FROM dish_category
         WHERE shop_id = #{shopId}
         ORDER BY sort ASC, id ASC
+    </select>
+
+    <select id="findById" resultType="com.example.springbootblank.category.entity.DishCategory">
+        SELECT id, shop_id AS shopId, category_name AS categoryName, sort, status, create_time, update_time
+        FROM dish_category
+        WHERE id = #{id}
     </select>
 
     <insert id="insertCategory" useGeneratedKeys="true" keyProperty="id">

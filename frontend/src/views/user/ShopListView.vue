@@ -12,6 +12,21 @@ const loading = ref(true)
 const error = ref('')
 const showOrders = ref(false)
 
+const shopThemes = {
+  1: { icon: '🥩', tag: '经典人气' },
+  2: { icon: '🍱', tag: '江南风味' },
+  3: { icon: '🍗', tag: '韩式料理' },
+}
+
+function resolveTheme(shop) {
+  return shopThemes[Number(shop.id)] || { icon: '🏪', tag: '精选商家' }
+}
+
+function featuredDishList(shop) {
+  const raw = String(shop.featuredDishes || '').trim()
+  return raw ? raw.split('、').filter(Boolean) : []
+}
+
 onMounted(async () => {
   try {
     await auth.refreshUserProfile()
@@ -70,11 +85,21 @@ function logout() {
 
     <div v-else class="shop-grid">
       <article v-for="shop in shops" :key="shop.id" class="shop-card" @click="enterShop(shop.id)">
-        <div class="shop-icon">🏪</div>
+        <div class="shop-icon">{{ resolveTheme(shop).icon }}</div>
         <div class="shop-body">
-          <h3>{{ shop.shopName }}</h3>
+          <h3>
+            {{ shop.shopName }}
+            <span class="theme-tag">{{ resolveTheme(shop).tag }}</span>
+          </h3>
           <p v-if="shop.address" class="addr">📍 {{ shop.address }}</p>
           <p v-if="shop.notice" class="notice">{{ shop.notice }}</p>
+          <p class="meta" v-if="shop.categoryCount || shop.dishCount">
+            分类 {{ Number(shop.categoryCount || 0) }} · 菜品 {{ Number(shop.dishCount || 0) }}
+            <span v-if="Number(shop.minPrice || 0) > 0"> · ¥{{ Number(shop.minPrice).toFixed(2) }} 起</span>
+          </p>
+          <div class="feature-row" v-if="featuredDishList(shop).length > 0">
+            <span v-for="dish in featuredDishList(shop)" :key="dish" class="dish-chip">{{ dish }}</span>
+          </div>
         </div>
         <span class="arrow">›</span>
       </article>
@@ -187,6 +212,16 @@ function logout() {
   font-size: 1.05rem;
   color: #1e293b;
 }
+.theme-tag {
+  margin-left: 8px;
+  font-size: 0.72rem;
+  color: #ea580c;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  padding: 2px 8px;
+  vertical-align: middle;
+}
 .addr {
   margin: 0 0 2px;
   font-size: 0.85rem;
@@ -196,6 +231,26 @@ function logout() {
   margin: 0;
   font-size: 0.82rem;
   color: #94a3b8;
+}
+.meta {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: #475569;
+}
+.feature-row {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.dish-chip {
+  font-size: 0.76rem;
+  line-height: 1.2;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 3px 8px;
 }
 .arrow {
   font-size: 1.5rem;
