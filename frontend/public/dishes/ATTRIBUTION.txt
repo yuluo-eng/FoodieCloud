@@ -24,6 +24,14 @@
 - iced-tea.jpg | 冰茶饮品 | https://unsplash.com/photos/glass-of-iced-tea-with-lemon-and-mint-fDWtPLCPgKU
 - iced-coffee.jpg | 冰咖啡 | https://unsplash.com/photos/iced-coffee-with-cream-and-ice-in-glass-wWmQEoFK9gs
 
+三、江南小厨 / 韩味食堂（shop_id 2、3，已下载至本目录；许可：Unsplash License）
+- jiangnan-spare-ribs-rice.jpg | 葱香排骨饭 | images.unsplash.com …/photo-1512058564366
+- jiangnan-osmanthus-lotus.jpg | 桂花糖藕 | …/photo-1473093295043
+- jiangnan-plum-soda.jpg | 青梅苏打 | …/photo-1513558161293
+- korean-bibimbap.jpg | 韩式石锅拌饭 | …/photo-1498654896293
+- korean-fried-chicken.jpg | 韩式炸鸡块 | …/photo-1562967916
+- korean-yuzu-honey-tea.jpg | 柚子蜂蜜茶 | …/photo-1571934811356
+
 备注：
 - 以上清单用于本地开发与演示，发布前请再次核对授权、商标和人物肖像风险。
 - 你确认后，我会按这个文件名和顺序直接下载落地。
