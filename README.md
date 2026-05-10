@@ -76,6 +76,14 @@
 
 ---
 
+## 演示数据与登录交互（2026-05 快照）
+
+- **多店演示菜**：`shop_id` 2（江南小厨）、3（韩味食堂）在最新 [`docs/init.sql`](docs/init.sql) 中各维护 **12** 道菜品（主食 / 小吃 / 饮品），定价分档；老库按需执行 [`docs/patch-expand-shop2-shop3-dishes.sql`](docs/patch-expand-shop2-shop3-dishes.sql)。
+- **静态菜品图**：仓库内 [`frontend/public/dishes/`](frontend/public/dishes/) 提供配图；`init.sql` 中 `image_url` 多为 `/dishes/*.jpg`；HTTPS 外链改本地见 [`docs/patch-shop2-shop3-local-images.sql`](docs/patch-shop2-shop3-local-images.sql)。
+- **登录错误与 401**：账号或密码错误时接口返回 **401**；[`frontend/src/api/request.js`](frontend/src/api/request.js) 对登录类路径豁免「清空 Token + 整页跳登录」，避免 Chrome 等浏览器看起来像整页刷新、看不到错误文案（约定见 [`docs/后端接口文档.md`](docs/后端接口文档.md) 接口约定 · 登录失败与 HTTP 401）。
+
+---
+
 ## 近期开发记录（用户资料 · 鉴权体验 · 逆地理）
 
 以下为同一阶段已落地内容，便于答辩说明「前后端如何协作、数据如何入库」。

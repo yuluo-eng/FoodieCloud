@@ -46,15 +46,42 @@ app:
 
 ## 3. 数据库初始化
 
-按顺序执行 SQL 脚本：
+### 3.1 全新库（推荐）
+
+当前主干已将演示店铺、多店菜品、`patch-dish-images` 等与早期补丁中的多处逻辑**合并进** [`docs/init.sql`](./init.sql)。**从零搭建环境时只需执行：**
 
 ```bash
 mysql -u $DB_USER -p $DB_NAME < docs/init.sql
+```
+
+若仍需仓库内历史脚本（与早期分支对齐），可按下列顺序追加执行：
+
+```bash
 mysql -u $DB_USER -p $DB_NAME < docs/patch-rider.sql
 mysql -u $DB_USER -p $DB_NAME < docs/patch-dish-images.sql
 mysql -u $DB_USER -p $DB_NAME < docs/patch-user-shipping.sql
 mysql -u $DB_USER -p $DB_NAME < docs/patch-operation-log.sql
 ```
+
+重复执行可能报错（索引已存在等），以报错提示为准，可忽略或手工调整后重试。
+
+### 3.2 已有库升级（增量）
+
+若数据库是在**旧版 `init.sql`** 下创建的，可按需执行增量补丁（已包含幂等或「不存在则插入」的写法者为佳）：
+
+| 补丁文件 | 用途（摘要） |
+|----------|----------------|
+| [`patch-shop2-shop3-local-images.sql`](./patch-shop2-shop3-local-images.sql) | 江南小厨/韩味食堂六道菜图片改为本地 `/dishes/*.jpg` |
+| [`patch-expand-shop2-shop3-dishes.sql`](./patch-expand-shop2-shop3-dishes.sql) | 两家店调价 + 扩充菜品数据 |
+
+执行示例：
+
+```bash
+mysql -u $DB_USER -p $DB_NAME < docs/patch-shop2-shop3-local-images.sql
+mysql -u $DB_USER -p $DB_NAME < docs/patch-expand-shop2-shop3-dishes.sql
+```
+
+**说明**：若已用**最新** `init.sql` 全量重建，上述两条通常不必再执行（内容已包含在 `init.sql` 中）。
 
 ---
 

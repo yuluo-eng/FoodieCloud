@@ -10,6 +10,16 @@
 
 ---
 
+# 增量（2026-05 续）：演示菜扩充、本地图、登录 401 与部署说明
+
+**摘要**：
+
+- **数据**：`init.sql` 中江南小厨（`shop_id=2`）、韩味食堂（`shop_id=3`）各 **12 道**菜品，定价分档；菜品图使用 `frontend/public/dishes/` 下静态资源（及部分共用占位图）。增量脚本：`patch-shop2-shop3-local-images.sql`、`patch-expand-shop2-shop3-dishes.sql`（老库按需执行；全新初始化以最新 `init.sql` 为准即可）。
+- **前端**：`frontend/src/api/request.js` 对 **`/auth/user/login`、`/employee/login`、`/rider/login`** 的 HTTP **401** 不再触发「清空 Token + 整页跳登录」，以便展示「账号或密码错误」等文案。
+- **文档**：`docs/deploy-guide.md` 区分全新部署与历史库补丁顺序；`docs/后端接口文档.md` 增加「登录失败与 HTTP 401」约定。
+
+---
+
 # 第 1 批：后端安全 + 库存闭环
 
 涉及 Issues: #3, #4, #5, #6, #7, #8

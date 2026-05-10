@@ -36,6 +36,9 @@
 - **多商家**：用户先进入店铺列表（`/user`），进入某店后为 `/user/shop/:shopId`；下单携带 `shopId`，后端创建订单要求 `shopId` 非空。
 - **商家店铺绑定**：员工登录与 `/auth/me` 返回 `shopId`；商家端请求均以该 `shopId` 为准（勿手工写死）；接口层对带 `shopId` 的读写做**店铺隔离**，普通员工不可跨店；`SUPER_ADMIN` 可跨店运维。
 - **平台代入驻**：由管理后台调用 `POST /api/admin/shops` 与 `POST /api/admin/shops/{shopId}/employees/bootstrap` 创建新店与首个店长；详见 [`后端接口文档.md`](./后端接口文档.md) §10。
+- **演示数据（江南小厨 / 韩味食堂）**：`init.sql` 中为 `shop_id` 2、3 各维护 **主食 / 小吃 / 饮品** 共 **12 道菜品**，定价区分江南亲民档与韩式略高档位；菜品图优先使用 `frontend/public/dishes/` 下静态文件（`/dishes/*.jpg`）。老库增量见 [`patch-expand-shop2-shop3-dishes.sql`](./patch-expand-shop2-shop3-dishes.sql)、[`patch-shop2-shop3-local-images.sql`](./patch-shop2-shop3-local-images.sql)。
+- **用户端店铺列表**：`GET /api/user/shops` 返回聚合字段（分类数、菜品数、最低价、推荐菜名字符串等）；卡片左侧「图标 / 四字标签」部分由前端按 **`shop.id`** 写死映射（非 AI 生成），新店默认 🏪 +「精选商家」。
+- **登录错误提示**：登录接口返回 **401** 时，前端不得按「踢下线」整页跳转（见 [`后端接口文档.md`](./后端接口文档.md) 接口约定 · 登录失败与 HTTP 401）。
 - **下单与支付**：结算 → 订单确认页 → 支付页 → 支付结果页；路由与返回逻辑已串联。
 - **三端信息展示**：用户/商家/骑手订单或任务卡片中展示对方关键信息（店铺、收货人、骑手等，以接口与 Mapper 为准）。
 - **管理后台**：独立 `adminToken`；含平台看板、用户、骑手、**商家（列表、营业状态切换、新建店铺、创建店长）**、全局订单；已移除「近 30 天活跃用户」统计与展示。
@@ -50,6 +53,7 @@
 - **库存**：支付成功后在事务内按订单明细扣减；`UPDATE … WHERE stock >= qty` 防止超卖；不足则整单回滚。
 - **上传**：商家与用户上传分别限制大小与 MIME，见各 Controller。
 - **审计**：关键操作异步写 `operation_log`（见 `OpLogService`）。
+- **前端 Axios**：全局响应拦截器对 **401** 会清理本地 Token 并跳转登录页；**登录路径**上的 401 已排除，避免与「密码错误」混淆（见 `frontend/src/api/request.js`）。
 
 ---
 
@@ -72,7 +76,7 @@
 ## 6. 开发历程与当前基线
 
 - **第 1～4 批**：详见 [`development-log.md`](./development-log.md)（安全与库存、审计与前端基建、体验与骑手、单测与集成测试与 DevOps）。
-- **当前代码基线（日志未逐条展开的增量）**：三端联动与下单支付流程、订单 DTO 丰富字段、独立管理后台与 `admin` 认证、商家配送方式选择、多商家与用户选店、骑手送达确认、`AuthMeResponse.shopId` 与商家端 `shopId` 修复等，均已合入主干；新验收以本文档第 3 节 + `checklist.md` + [`testing-guide.md`](./testing-guide.md) 为准。
+- **当前代码基线（日志未逐条展开的增量）**：三端联动与下单支付流程、订单 DTO 丰富字段、独立管理后台与 `admin` 认证、商家配送方式选择、多商家与用户选店、骑手送达确认、`AuthMeResponse.shopId` 与商家端 `shopId` 修复等，均已合入主干。**近年增量**（详见 [`development-log.md`](./development-log.md) 文首「增量」小节）：商家端店铺隔离与超管跨店、管理端代入驻、用户端店铺列表聚合、`shop_id` 2/3 演示菜扩充与静态图、`request.js` 对登录 401 豁免等。新验收以本文档第 3 节 + `checklist.md` + [`testing-guide.md`](./testing-guide.md) 为准。
 
 ---
 
