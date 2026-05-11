@@ -65,10 +65,16 @@
 
 ---
 
+## 开发与部署说明（前后端如何通了）
+
+- **日常开发**：在 `frontend/` 执行 `npm run dev`，由 **Vite 开发服务器**（默认 **5173**）提供页面，并通过 `vite.config.js` 将 **`/api`、`/uploads`** **代理**到本机 Spring Boot（默认 **8080**）。**无需安装或启动 Nginx**。
+- **生产上线**：`npm run build` 得到 `dist/`；可选用 **Nginx**（或其它 Web 服务器）托管静态文件并反向代理 `/api`，或将静态资源并入后端统一发布，详见 `docs/deploy-guide.md`。
+
 ## 文档与目录提示
 
 | 路径 | 说明 |
 |------|------|
+| `docs/deploy-guide.md` | 环境变量、构建、发布与回滚（**不以 Docker 为交付形态**；生产可选用 Nginx 等，详见文首说明） |
 | `docs/后端接口文档.md` | 后端接口文档入口（路径、请求/响应示例） |
 | `docs/init.sql` | 数据库初始化脚本（**全新建库**：含 `user` 收货字段） |
 | `docs/patch-user-shipping.sql` | **存量数据库**补丁：为已有 `user` 表增加收货人、收货电话、地址、经纬度等字段（执行一次即可） |
@@ -180,8 +186,8 @@
 ### 1) 环境准备
 
 - 服务器：Linux（2C4G 起步）
-- 依赖：JDK 17、MySQL 8、Nginx
-- 域名与 HTTPS：建议使用 Nginx + Let’s Encrypt
+- 依赖：**JDK 17、MySQL 8**；上线若要独立托管前端静态资源，**可选用 Nginx**（或其它 Web 服务器）反代 `/api`（开发阶段用 Vite 代理即可，见上文）
+- 域名与 HTTPS：若使用 Nginx，可配合 Let’s Encrypt 等申请证书
 
 ### 2) 数据库与后端部署
 
@@ -205,8 +211,8 @@ npm install
 npm run build
 ```
 
-2. 将 `frontend/dist` 部署到 Nginx 静态目录
-3. Nginx 反向代理 `/api` 到 Spring Boot 服务
+2. **方式 A（常见）**：将 `frontend/dist` 放到 **Nginx**（或其它 Web 服务器）静态目录，配置 **`/api`** 反向代理到 Spring Boot（示例见 `frontend/nginx.conf`）。  
+3. **方式 B**：按 `docs/deploy-guide.md` 将 `dist` 拷入后端 `static` 由 **单一 JAR** 对外提供（可不单独跑 Nginx）。
 
 ### 4) 上传文件目录持久化
 
@@ -251,7 +257,7 @@ npm run build
 
 ### 答辩前（上线与材料阶段）
 
-- 完成服务器部署演练（前后端 + 数据库 + Nginx）
+- 完成服务器部署演练（前后端 + 数据库；前端静态资源可选用 Nginx 等）
 - 完成 HTTPS 与上传目录持久化配置
 - 完成演示账号、演示数据、演示脚本
 - 完成论文/答辩 PPT 中“架构图 + ER 图 + 时序图”一致性校对
@@ -262,12 +268,12 @@ npm run build
 
 ```mermaid
 flowchart LR
-  U[用户端 Vue] -->|HTTP /api| N[Nginx]
-  M[商家端 Vue] -->|HTTP /api| N
-  N -->|Reverse Proxy| B[Spring Boot API]
+  U[用户端 Vue] -->|页面与 /api| E[HTTP 入口]
+  M[商家端 Vue] -->|页面与 /api| E
+  E -->|开发：Vite 代理\n生产：可选 Nginx 等| B[Spring Boot API]
   B --> D[(MySQL)]
   B --> F[(本地上传目录 uploads)]
-  N --> S[前端静态资源 dist]
+  E -.-> S[前端 dist 静态资源]
 ```
 
 ---
@@ -411,10 +417,8 @@ cd frontend
 npm ci
 npm run build
 
-# 4) 部署静态资源（示例）
+# 4) 部署静态资源（若使用 Nginx 等，示例）
 # sudo rsync -avz dist/ /var/www/yueshihui/
-
-# 5) Nginx reload
 # sudo nginx -t && sudo systemctl reload nginx
 ```
 

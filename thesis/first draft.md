@@ -1,7 +1,8 @@
 # 悦食汇点餐系统论文初稿（First Draft）
 
 > 说明：本文档仅基于当前仓库已存在的实现与文档整理，不编造未实现功能。  
-> 事实来源优先级：`src/main/java`、`src/main/resources/mapper`、`docs/init.sql`、`docs/后端接口文档.md`、`docs/development-documentation.md`、`README.md`。
+> 事实来源优先级：`src/main/java`、`src/main/resources/mapper`、`docs/init.sql`、`docs/后端接口文档.md`、`docs/development-documentation.md`、`docs/deploy-guide.md`、`README.md`。  
+> **部署**：后端 **JAR + MySQL**；前端开发阶段由 **Vite 开发服务器代理** `/api`（见 `frontend/vite.config.js`）；生产环境**可选用** Nginx（或其它 Web 服务器）托管 `dist` 并反向代理 API，亦非运行时必需组件。仓库已移除 Docker 预案，见 `docs/deploy-guide.md`。
 
 ---
 
@@ -9,9 +10,9 @@
 
 ### 1.1 研究背景
 
-随着校园和商圈内即时餐饮服务需求增加，点餐系统逐步从单体页面演进为前后端分离的业务系统。此类系统通常需要同时支持商家管理与用户下单两类场景，并在订单、支付、库存、权限等环节保证基本一致性与可维护性。
+随着校园和商圈内即时餐饮服务需求增加，点餐系统逐步从单体页面演进为前后端分离的业务系统。此类系统通常需要同时支持用户点餐、商家运营、骑手履约与平台管理等场景，并在订单、支付、库存、权限等环节保证基本一致性与可维护性。
 
-本项目“悦食汇”以毕设为背景，采用 Vue + Spring Boot + MyBatis + MySQL 的组合，构建一套可演示、可扩展的点餐系统原型。
+本项目“悦食汇”以毕设为背景，采用 Vue + Spring Boot + MyBatis + MySQL 的组合，在同一仓库内实现 **用户端、商家端、骑手端、管理后台** 四类前端入口与统一后端 API，构建可演示、可扩展的点餐系统原型。
 
 ### 1.2 研究意义
 
@@ -27,9 +28,9 @@
 
 第二，在交易一致性层面，学术界与工业界普遍认为“仅依赖单条 SQL 原子性不足以保障完整业务一致性”。经典工作 Sagas 提出将长事务拆分为一组可补偿的局部事务，以提升系统并发能力并降低锁持有时间。这一思想在现代分布式系统中被广泛借鉴，常与幂等、重试、状态机校验等机制配合使用。在订单系统场景中，支付回调重复通知、跨模块状态更新失败、并发写冲突是高频问题，因此研究与实践都强调“业务原子边界定义 + 幂等语义 + 异常回滚/补偿”三者结合。本项目当前已将“下单写订单+明细+清购物车”与“支付成功更新支付记录+订单状态”纳入事务边界，并在支付回调引入幂等分支，符合该研究方向在中小系统中的落地方式。
 
-第三，在权限与安全层面，RBAC 模型已成为后台管理系统中最常见的授权思路。NIST 提出的 RBAC 标准化工作统一了角色、权限、会话与职责分离等核心概念，为工程实现提供了稳定语义。近年来研究也在 RBAC 基础上引入上下文约束与属性增强（如与 ABAC 融合），以适配动态授权场景。针对本项目，商家端已采用“员工身份 + 角色编码”的方式控制店铺、分类、菜品、员工等管理能力，能够覆盖当前业务规模；后续仍可按最小权限原则进一步细化订单处理权限与审计能力。
+第三，在权限与安全层面，RBAC 模型已成为后台管理系统中最常见的授权思路。NIST 提出的 RBAC 标准化工作统一了角色、权限、会话与职责分离等核心概念，为工程实现提供了稳定语义。近年来研究也在 RBAC 基础上引入上下文约束与属性增强（如与 ABAC 融合），以适配动态授权场景。针对本项目，商家端已采用“员工身份 + 角色编码”的方式控制店铺、分类、菜品、员工等管理能力；关键业务动作另通过 `OpLogService` **异步写入** `operation_log` 表，形成基础审计轨迹。后续仍可按最小权限原则进一步细化订单处理权限与 RBAC 权限点粒度。
 
-综合来看，国内外研究趋势可以概括为：架构上强调模块化与可扩展，交易上强调一致性与可恢复，安全上强调标准化权限模型。本项目的技术路线与该趋势一致，但在系统规模、复杂度与实现成本之间采取了“渐进式工程化”策略，即先保证核心链路正确与可测，再逐步引入并发控制、审计日志与更细粒度授权能力。
+综合来看，国内外研究趋势可以概括为：架构上强调模块化与可扩展，交易上强调一致性与可恢复，安全上强调标准化权限模型。本项目的技术路线与该趋势一致，但在系统规模、复杂度与实现成本之间采取了“渐进式工程化”策略，即先保证核心链路正确与可测，再在库存条件更新、支付幂等等机制上落实并发安全基础，并持续完善压测、权限细分与审计策略。
 
 ### 1.4 论文组织结构
 
@@ -48,27 +49,28 @@
 
 #### 2.1.1 硬件环境
 
-本项目开发与测试采用单机环境，硬件配置如下：
+开发与联调在 **单机环境** 完成。**终稿请按答辩或实测所用机器填写**，以满足“实验环境可复现”要求，建议包含：
 
-- CPU：Apple Silicon M3
-- 内存：16 GB
-- 操作系统：macOS 26
-
-建议在论文终稿补充如下硬件参数，以满足毕业论文规范中的“实验环境可复现”要求：
-
-- 处理器核心数
-- 系统盘与数据盘容量
-- 网络环境（本地开发/校园网/云服务器）
+- CPU 型号与核心数  
+- 内存容量  
+- 操作系统（如 Windows 11 / macOS / Linux）  
+- 系统盘与数据盘容量（若涉及数据库与上传目录）  
+- 网络环境（本地回环 / 校园网 / 云服务器）
 
 #### 2.1.2 软件环境
 
 - JDK 17（`pom.xml` 中 `java.version=17`）。
 - Spring Boot 4.0.5（`spring-boot-starter-parent`）。
 - MyBatis Spring Boot Starter 3.0.4。
-- MySQL 8.4.8（macOS arm64, Homebrew）。
-- Maven Wrapper：3.9.14（`.mvn/wrapper/maven-wrapper.properties`）。
-- 前端：Vue 3 + Vite（版本见 `frontend/package.json`）。
-- Node.js 25.8.2，npm 11.11.1。
+- MySQL 8.x（表结构与演示数据见 `docs/init.sql`；具体小版本以实际安装为准）。
+- Maven Wrapper：分发 **3.9.14**（`.mvn/wrapper/maven-wrapper.properties`）。
+- 前端：Vue **3.5.x**、Vue Router **4.5.x**、Pinia **2.3.x**、Axios **1.7.x**、Vite **6.0.x**（以 `frontend/package.json` 为准）。
+- Node.js：**18+**（`docs/deploy-guide.md` 最低要求）；精确版本以本地 `node -v` / 答辩环境为准。
+
+#### 2.1.3 前后端联调与访问路径（说明）
+
+- **开发阶段**：执行 `npm run dev`，由 **Vite 开发服务器**（默认端口 **5173**）提供前端页面，并在 `vite.config.js` 中将 **`/api`、`/uploads`** 代理至后端 Spring Boot（如 **8080**）。此模式下**不依赖 Nginx**。
+- **生产部署**：前端 `npm run build` 生成 **`dist/`**；可选用 **Nginx**（或其它 Web 服务器/IIS 等）托管静态资源并反向代理 **`/api`**，亦可按 `docs/deploy-guide.md` 将静态资源置于后端统一访问。**Nginx 仅为可选部署方案之一**，与业务代码无编译期耦合。
 
 ### 2.2 系统开发工具
 
@@ -82,9 +84,9 @@
 ### 2.3 系统开发技术
 
 - 后端：Spring Boot 提供 Web API，MyBatis XML 负责 SQL 映射。
-- 鉴权：JWT（`JwtService` 生成与解析），用户端与商家端使用不同 `type`。
-- 权限：商家端使用 `MerchantAuthGuard` 进行员工身份与角色校验。
-- 前端：Vue Router + Pinia + axios，实现用户端与商家端页面与请求流程。
+- 鉴权：JWT（`JwtService` 生成与解析）；**用户 / 商家员工 / 骑手** 使用不同 `type`；**管理后台** 使用独立的 `adminToken` 流程（与商家员工会话分离，详见 `docs/后端接口文档.md`）。
+- 权限：商家端使用 `MerchantAuthGuard` 做店铺归属校验；**普通员工仅本店**，**`SUPER_ADMIN` 角色可跨店**；管理端接口要求超级管理员身份。
+- 前端：Vue Router + Pinia + axios，实现四端路由与请求流程（`requiresUser` / `requiresMerchant` / `requiresRider`、管理端路由等）。
 - 统一响应：`ApiResponse(code, msg, data)`。
 
 #### 2.3.1 关键技术在项目中的应用对应
@@ -92,19 +94,25 @@
 | 技术点 | 在本项目中的作用 | 代码/文档对应 |
 |---|---|---|
 | JWT | 登录态鉴权与身份识别 | `auth/security/JwtService.java` |
+| Vite 开发服务器 | **开发阶段**将 `/api`、`/uploads` 代理至后端（默认 5173 → 8080） | `frontend/vite.config.js` |
 | MyBatis XML | SQL 与实体映射 | `src/main/resources/mapper/*.xml` |
-| 事务注解 | 多步写库原子性保障 | `OrderServiceImpl#createOrder`、`PaymentServiceImpl#mockSuccess` |
-| Vue Router 守卫 | 前端路由鉴权与跳转控制 | `frontend/src/router` |
+| 事务注解 | 多步写库原子性保障 | `OrderServiceImpl#createOrder`、`PaymentServiceImpl#mockSuccess`（含支付成功后的库存条件扣减） |
+| 条件更新 SQL | 防止超卖 | `DishMapper#deductStock`（`stock >= qty`） |
+| `@Async` 审计 | 关键操作异步落库 | `OpLogService` → `operation_log` |
+| Vue Router 守卫 | 前端路由鉴权与跳转控制 | `frontend/src/router`、`frontend/src/router/guards.js` |
 | axios 拦截器 | 统一处理错误；**401** 时对「需登录业务接口」清理 Token 并跳转；**登录接口**上的 **401**（账号或密码错误）不触发整页跳转，以免掩盖错误提示 | `frontend/src/api/request.js` |
 | Postman | 接口联调与异常分支验证 | 测试流程记录 |
 
 ### 2.4 开发方法总结
 
-本项目采用“增量实现 + 持续联调”的方式推进，先打通主链路，再补充管理能力与质量改进项。近期已落地的工程化改动包括：
+本项目采用“增量实现 + 持续联调”的方式推进，先打通主链路，再补充多店、骑手池、管理端代入驻与质量改进项。已与当前仓库对齐的要点包括：
 
-- 用户下单流程事务化（`OrderServiceImpl.createOrder`）。
-- 支付成功回调事务化与幂等保护（`PaymentServiceImpl.mockSuccess`）。
-- 补充上述关键方法的单元测试用例。
+- 用户下单流程事务化：`orders` + `order_item` + 清理已选购物车（`OrderServiceImpl#createOrder`）。
+- 支付成功回调事务化、幂等分支与行数校验；**同一事务内**按订单明细 **条件扣减** `dish.stock`（`PaymentServiceImpl#mockSuccess` + `DishMapper`）。
+- 商家端 **店铺隔离** 与 **`SUPER_ADMIN` 跨店**（`MerchantAuthGuard`）；上传校验、旧菜品图清理等见对应 Service/Controller。
+- 关键动作 **异步审计** 写入 `operation_log`（`OpLogService`）。
+- 测试：`OrderServiceImplTest`、`PaymentServiceImplTest`、`MerchantAuthGuardTest` 等单测，以及全链路 **`OrderFlowIntegrationTest`**（下单 → 支付扣库存 → 商家履约等场景）。
+- **部署文档** `docs/deploy-guide.md`：**非 Docker**；后端 JAR + MySQL；前端生产可选用 Nginx 等托管静态资源并反代 API（开发阶段为 Vite 代理）。
 
 ### 2.5 本章小结
 
@@ -118,10 +126,10 @@
 
 基于当前实现，系统需求可归纳为**多入口**能力（与仓库四端前端一致）：
 
-- **用户端**：注册登录；**多商家**场景下先进入店铺列表再进入指定店铺浏览菜品；购物车管理；下单；支付（模拟）；订单查询与取消；个人资料等。
-- **商家端**：员工登录；员工管理；店铺设置；分类与菜品管理；订单处理（含自配送或进入骑手池等）；工作台统计；接口层按 **店铺隔离**，普通员工不可跨店。
-- **骑手端**：登录；可接订单、更新配送状态、送达确认等（详见接口文档）。
-- **管理后台**：**SUPER_ADMIN** 员工登录；平台数据与用户/骑手/订单管理；**平台代入驻**（新建店铺、为店铺创建店长账号）等。
+- **用户端**：注册登录；**多商家**场景下先进入店铺列表（如 `GET /api/user/shops`）再进入指定店铺浏览菜品；购物车管理；下单；支付（模拟）；订单查询与取消；个人资料、头像上传与逆地理辅助填地址等。
+- **商家端**：员工登录；员工管理；店铺设置；分类与菜品管理；订单处理（接单时可 **自配送** 或 **进入骑手池**）；工作台统计；接口层 **按店铺隔离**，普通员工不可跨店；**`SUPER_ADMIN` 可跨店运维**。
+- **骑手端**：独立登录；任务列表、接单履约、配送状态更新；**送达前二次确认**（前端交互）；在线状态等（详见 `docs/后端接口文档.md`）。
+- **管理后台**：独立 **`adminToken` 登录态**（与用户/骑手 JWT 分离）；平台看板与用户、骑手、商家、全局订单等管理；**平台代入驻**（`POST /api/admin/shops`、`POST /api/admin/shops/{shopId}/employees/bootstrap` 新建店铺并创建店长账号，详见接口文档 §10）。
 
 接口层面的已实现能力详见 `docs/后端接口文档.md`。
 
@@ -138,8 +146,8 @@
 
 - 参与者：用户/系统。
 - 前置条件：支付单已创建。
-- 主流程：调用支付成功接口，系统更新 `payment_record` 和对应订单支付状态。
-- 约束：重复回调时按幂等处理。
+- 主流程：调用支付成功接口，系统在同一事务内更新 `payment_record`、订单支付相关状态，并按订单明细 **条件扣减** `dish` 库存。
+- 约束：重复回调时按幂等处理；库存不足时事务回滚。
 
 #### 3.2.3 商家订单处理用例
 
@@ -149,47 +157,51 @@
 
 ### 3.3 整体系统用例图（按 UML 规范）
 
+> **说明**：下图侧重 **商家端** 核心用例及与「员工登录」的 `<<include>>` 关系，便于与商家后台页面结构对应。**用户端、骑手端、平台管理端** 的用例边界已在 **§3.1** 与接口文档中列出；若学校要求「单张总用例图覆盖全部参与者」，可在终稿用 Visio/draw.io 增补子图或拆分为图 3-1a～3-1c。
+
 ```mermaid
-usecaseDiagram
-  actor User as "用户"
-  actor Staff as "商家员工"
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryBorderColor': '#000000', 'textColor': '#000000', 'lineColor': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'edgeLabelBackground': '#ffffff'}}}%%
+flowchart LR
+    %% 1. 强制定义角色在最左侧
+    Staff(("商家员工"))
 
-  rectangle "悦食汇点餐系统" {
-    (用户注册/登录) as UC1
-    (浏览菜品与购物车) as UC2
-    (提交订单) as UC3
-    (创建支付单) as UC4
-    (支付状态查询) as UC5
-    (个人资料维护) as UC6
+    subgraph System ["悦食汇点餐系统 - 商家端"]
+        %% 2. 核心业务用例（会自动排在中间）
+        MC2(["店铺设置"])
+        MC3(["分类与菜品管理"])
+        MC4(["订单接单与处理"])
+        MC5(["工作台数据统计"])
+        MC6(["员工管理"])
+        
+        %% 3. 被依赖的用例（会自动排在最右侧）
+        MC1(["员工登录"])
+    end
 
-    (员工登录) as MC1
-    (店铺设置) as MC2
-    (分类与菜品管理) as MC3
-    (订单接单与处理) as MC4
-    (工作台数据统计) as MC5
-    (员工管理) as MC6
-  }
+    %% 4. 角色连接业务用例（从左向中间连）
+    Staff --- MC2
+    Staff --- MC3
+    Staff --- MC4
+    Staff --- MC5
+    Staff --- MC6
 
-  User --> UC1
-  User --> UC2
-  User --> UC3
-  User --> UC4
-  User --> UC5
-  User --> UC6
-
-  Staff --> MC1
-  Staff --> MC2
-  Staff --> MC3
-  Staff --> MC4
-  Staff --> MC5
-  Staff --> MC6
-
-  UC3 ..> UC1 : <<include>>
-  UC4 ..> UC1 : <<include>>
-  MC2 ..> MC1 : <<include>>
-  MC3 ..> MC1 : <<include>>
-  MC4 ..> MC1 : <<include>>
+    %% 5. 业务用例连接登录（从中间向右连）
+    %% 使用 &lt; 和 &gt; 转义字符，彻底解决编辑器吞标签的问题
+    MC2 -. "&lt;&lt;include&gt;&gt;" .-> MC1
+    MC3 -. "&lt;&lt;include&gt;&gt;" .-> MC1
+    MC4 -. "&lt;&lt;include&gt;&gt;" .-> MC1
+    MC5 -. "&lt;&lt;include&gt;&gt;" .-> MC1
+    MC6 -. "&lt;&lt;include&gt;&gt;" .-> MC1
 ```
+
+
+
+
+
+
+
+
+
+
 
 ### 3.4 主要用例描述表
 
@@ -212,38 +224,64 @@ usecaseDiagram
 当前仓库尚未形成完整压测报告，现阶段性能需求以功能可用为主，后续建议补充：
 
 - 接口响应时间统计（核心接口如登录、下单、支付）。
-- 并发场景下库存与订单一致性验证（待后续库存模块落地）。
+- **高并发**场景下库存扣减与订单状态冲突的专项压测（当前已实现条件更新与事务边界，尚未形成压测报告）。
 - 数据量增长下分页查询性能验证（订单、菜品、员工列表）。
 
-（说明：支付成功后已对菜品库存做条件扣减，详见 `PaymentServiceImpl` / `DishMapper`；大规模并发下的专项压测仍可单独补充。）
+（说明：支付成功路径已包含 **条件扣减库存** 与事务回滚语义，详见 `PaymentServiceImpl`、`DishMapper`；大规模并发下的量化结论需另行压测。）
 
 ### 3.7 数据流分析（DFD）
 
 #### 3.7.1 系统上下文数据流图
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryBorderColor': '#000000', 'textColor': '#000000', 'lineColor': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'edgeLabelBackground': '#ffffff'}}}%%
 flowchart LR
-  User[用户] -->|登录、浏览、下单、支付请求| Sys[悦食汇系统]
-  Merchant[商家员工] -->|管理请求、订单处理请求| Sys
-  Sys -->|页面数据与处理结果| User
-  Sys -->|管理结果与统计结果| Merchant
-  Sys <-->|读写数据| DB[(MySQL)]
-  Sys <-->|上传与访问| FS[(uploads)]
+    User["用户"]
+    Merchant["商家员工"]
+    Rider["骑手"]
+    Admin["平台管理员"]
+    Sys(["悦食汇系统"])
+    DB[("MySQL")]
+    FS[("uploads")]
+
+    User -->|"登录、浏览、下单、支付请求"| Sys
+    Sys -->|"页面数据与处理结果"| User
+
+    Merchant -->|"店铺/菜品/员工/订单管理请求"| Sys
+    Sys -->|"统计与管理结果"| Merchant
+
+    Rider -->|"接单、配送状态、送达确认"| Sys
+    Sys -->|"任务与履约反馈"| Rider
+
+    Admin -->|"平台监管、代入驻等"| Sys
+    Sys -->|"平台侧数据与操作结果"| Admin
+
+    Sys <-->|"读写数据"| DB
+    Sys <-->|"上传与访问"| FS
 ```
 
 #### 3.7.2 订单支付主流程数据流图
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryBorderColor': '#000000', 'textColor': '#000000', 'lineColor': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'edgeLabelBackground': '#ffffff'}}}%%
 flowchart LR
-  A[用户购物车已选项] --> B[创建订单服务]
-  B --> C[(orders)]
-  B --> D[(order_item)]
-  B --> E[(cart_item 清理已选)]
-  C --> F[创建支付单]
-  F --> G[(payment_record)]
-  G --> H[支付成功回调]
-  H --> I[(payment_record 更新状态)]
-  H --> J[(orders 更新支付状态)]
+    %% 1. 数据源起点（使用圆角矩形表示数据/动作）
+    A(["用户购物车已选项"]) --> B(["创建订单服务"])
+
+    %% 2. 核心服务写库（系统内部处理动作继续用圆角，数据库用圆柱体）
+    B --> C[("orders")]
+    B --> D[("order_item")]
+    B --> E[("cart_item 清理已选")]
+
+    %% 3. 支付流程推进（依赖主订单表）
+    C --> F(["创建支付单"])
+    F --> G[("payment_record")]
+
+    %% 4. 支付回调写库
+    G --> H(["支付成功回调"])
+    H --> I[("payment_record 更新状态")]
+    H --> J[("orders 更新支付状态")]
+    
 ```
 
 ### 3.8 本章小结
@@ -262,71 +300,91 @@ flowchart LR
 - 后端（Spring Boot）承载业务逻辑。
 - MyBatis XML 访问 MySQL 数据库。
 - 上传资源通过 `uploads` 目录与静态资源映射对外提供。
+- **开发与部署差异**：开发时由 **Vite** 将浏览器请求转发至后端；上线后可将 **`dist`** 交由 **Nginx 等 Web 服务器**托管并反向代理 `/api`（可选，见 §2.1.3）。
 
 #### 4.1.1 系统架构图
 
+下图中的「HTTP 入口」抽象浏览器到后端的桥梁：**本地开发**对应 Vite 的开发服务器与代理；**生产环境**可选用 Nginx 等实现静态托管与反向代理，图中不单独展开两套画法以免冗余。
+
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryBorderColor': '#000000', 'textColor': '#000000', 'lineColor': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'edgeLabelBackground': '#ffffff'}}}%%
 flowchart LR
-  U[用户端 Vue] -->|HTTP /api| N[Nginx]
-  M[商家端 Vue] -->|HTTP /api| N
-  N -->|Reverse Proxy| B[Spring Boot API]
-  B --> D[(MySQL)]
-  B --> F[(本地上传目录 uploads)]
-  N --> S[前端静态资源 dist]
+    subgraph Frontend ["前端表现层（同仓库多路由入口）"]
+        U["用户端 (Vue 3)"]
+        M["商家端 (Vue 3)"]
+        R["骑手端 (Vue 3)"]
+        A["管理后台 (Vue 3)"]
+    end
+
+    subgraph Proxy ["HTTP 入口与静态资源"]
+        Entry{{"开发：Vite 代理 /api\n生产：可选 Nginx 等\n（详见 §2.1.3）"}}
+        S["前端构建产物 dist"]
+    end
+
+    subgraph Logic ["业务逻辑层"]
+        B(["Spring Boot API")]
+    end
+
+    subgraph Storage ["数据持久层"]
+        D[("MySQL 数据库")]
+        F[("本地上传目录 uploads")]
+    end
+
+    U -->|"页面与 API"| Entry
+    M -->|"页面与 API"| Entry
+    R -->|"页面与 API"| Entry
+    A -->|"页面与 API"| Entry
+    Entry -.->|"托管静态文件"| S
+    Entry -->|"转发 /api 等"| B
+    B -->|"MyBatis 访问"| D
+    B -->|"文件持久化"| F
 ```
 
 ### 4.2 系统功能设计
 
-按业务域划分为：认证、店铺、分类、菜品、员工、购物车、订单、支付、工作台统计等模块。  
+按业务域划分为：认证、店铺、分类、菜品、员工、**骑手**、购物车、订单、支付、配送协同（自配送 / 骑手池）、工作台统计、**平台管理与代入驻**、上传与审计等模块。  
 模块职责和接口入口可在 `docs/后端接口文档.md` 与各 `*Controller` 中对应验证。
 
 #### 4.2.1 系统功能模块图
 
 ```mermaid
-flowchart TB
-  subgraph L1[表现层]
-    direction LR
-    UUI[用户端页面]
-    MUI[商家端页面]
-  end
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffffff', 'primaryBorderColor': '#000000', 'textColor': '#000000', 'lineColor': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'edgeLabelBackground': '#ffffff'}}}%%
+flowchart LR
+    %% 1. 定义左侧功能点
+    U1(["菜品浏览"]) --- U
+    U2(["购物车"]) --- U
+    U3(["订单模块"]) --- U
+    U4(["支付模块"]) --- U
+    U5(["用户资料"]) --- U
+    
+    C1(["认证与鉴权"]) --- C
+    C2(["资源上传"]) --- C
 
-  AUTH[认证与鉴权模块]
+    %% 2. 左侧一级模块连接中心
+    U["用户交易域"] --- Sys
+    C["公共服务"] --- Sys
 
-  subgraph L2[业务层]
-    direction LR
-    subgraph UDOM[用户交易域]
-      direction TB
-      U1[菜品浏览模块]
-      U2[购物车模块]
-      U3[订单模块]
-      U4[支付模块]
-      U5[用户资料模块]
-    end
-    subgraph MDOM[商家运营域]
-      direction TB
-      M1[店铺模块]
-      M2[分类模块]
-      M3[菜品管理模块]
-      M4[员工模块]
-      M5[商家订单模块]
-      M6[工作台模块]
-      M7[上传模块]
-    end
-  end
+    %% 3. 中心根节点
+    Sys["悦食汇点餐系统功能模块"]
 
-  subgraph L3[数据层]
-    direction LR
-    DB[(MySQL)]
-    FILE[(uploads)]
-  end
+    %% 4. 中心连接右侧一级模块
+    Sys --- M["商家运营域"]
 
-  UUI --> AUTH
-  MUI --> AUTH
-  AUTH --> UDOM
-  AUTH --> MDOM
-  UDOM --> DB
-  MDOM --> DB
-  M7 --> FILE
+    %% 5. 右侧功能点
+    M --- M1(["店铺管理"])
+    M --- M2(["分类管理"])
+    M --- M3(["菜品管理"])
+    M --- M4(["员工管理"])
+    M --- M5(["订单处理"])
+    M --- M6(["工作台统计"])
+
+    Sys --- RD["骑手履约域"]
+    RD --- RD1(["任务接单"])
+    RD --- RD2(["配送与送达"])
+
+    Sys --- AD["平台管理域"]
+    AD --- AD1(["用户/骑手/订单"])
+    AD --- AD2(["代入驻"])
 ```
 
 ### 4.3 系统详细设计
@@ -339,13 +397,15 @@ flowchart TB
 
 #### 4.3.2 鉴权与权限设计
 
-- 用户接口：通过 JWT 解析并校验 `type=USER`。
-- 商家接口：通过 `MerchantAuthGuard` 进行员工身份及角色校验（部分订单接口目前仅校验员工身份）。
+- 用户接口：JWT 校验 `type=USER`（`UserAuthGuard` 等，以代码为准）。
+- 骑手接口：JWT 校验 `type=RIDER`。
+- 商家接口：`MerchantAuthGuard` 校验员工身份与店铺归属；**普通员工仅限本店资源**；**`SUPER_ADMIN` 可跨店**。
+- 管理后台：独立 **`admin` 认证**，与商家员工会话区分；敏感接口要求超级管理员角色（见 `docs/后端接口文档.md`）。
 
 #### 4.3.3 订单与支付一致性设计（已落地）
 
 - 下单流程：`orders + order_item + clearSelectedCart` 事务化。
-- 支付回调：`markPaymentSuccess + updateOrderPaySuccess` 事务化，并加入幂等分支与行数校验。
+- 支付回调：`markPaymentSuccess + updateOrderPaySuccess` **及按明细扣减库存** 处于同一事务；包含幂等分支与更新行数校验；**库存条件更新失败**（如超卖）时整单回滚。
 
 #### 4.3.4 核心流程图（下单与支付）
 
@@ -370,7 +430,7 @@ sequenceDiagram
   PS-->>FE: 返回 paymentNo
 
   FE->>PS: POST /api/user/payments/mock-success
-  PS->>DB: 更新 payment_record + orders(同一事务)
+  PS->>DB: 更新 payment_record + orders + 条件扣 dish.stock(同一事务)
   DB-->>PS: 提交成功
   PS-->>FE: success
 ```
@@ -423,20 +483,21 @@ sequenceDiagram
 数据库脚本见 `docs/init.sql`，核心表包括：
 
 - 用户与权限：`user`、`employee`、`role`、`permission`、`role_permission`
+- 骑手：`rider`（订单表 `orders.rider_id` 外键关联）
 - 店铺与菜品：`merchant_shop`、`dish_category`、`dish`
 - 交易链路：`cart_item`、`orders`、`order_item`、`payment_record`
-- 审计：`operation_log` 表；关键操作通过 `OpLogService` 异步写入（以代码为准）
+- 审计：`operation_log`；关键操作通过 `OpLogService` **异步写入**（以代码为准）
 
-README 中已提供 ER 简图（Mermaid）。
+README 中已提供 ER 简图（Mermaid），便于答辩快速对照；**完整实体集合与字段以 `docs/init.sql` 为准（当前共 14 张业务表）**。
 
-#### 4.4.1 数据库 E-R 图（Chen 记法，13 实体）
+#### 4.4.1 数据库 E-R 图（Chen 记法，14 实体）
 
 说明：学校规范要求 Chen 记法（实体矩形、属性椭圆、联系菱形、基数标注）。  
 Markdown/Mermaid 不适合严格表达 Chen 图形语义，因此本稿保留“关系事实清单 + 留白位”，终稿在 Word 中插入 draw.io/Visio 绘制的黑白 Chen 图。
 
 （图 4-6 数据库 E-R 图（Chen）留白位）
 
-> 【留白】此处插入 Chen 记法 E-R 图（依据 `docs/init.sql`，共 13 实体）。
+> 【留白】此处插入 Chen 记法 E-R 图（依据 `docs/init.sql`，共 **14** 张业务表实体：`user`、`merchant_shop`、`role`、`permission`、`role_permission`、`employee`、**`rider`**、`dish_category`、`dish`、`cart_item`、`orders`、`order_item`、`payment_record`、`operation_log`）。
 
 关系事实（用于绘图标注基数）：
 - merchant_shop 与 employee：1:N
@@ -452,6 +513,7 @@ Markdown/Mermaid 不适合严格表达 Chen 图形语义，因此本稿保留“
 - orders 与 order_item：1:N
 - dish 与 order_item：1:N
 - orders 与 payment_record：1:N（当前业务通常按 1:1 使用）
+- rider 与 orders：1:N（同一骑手可关联多笔历史订单；`orders.rider_id` 可空）
 - operation_log 与 user/employee：逻辑关联（无外键）
 
 #### 4.4.2 数据表清单（全表）
@@ -464,17 +526,18 @@ Markdown/Mermaid 不适合严格表达 Chen 图形语义，因此本稿保留“
 | 4 | `permission` | 权限定义 |
 | 5 | `role_permission` | 角色权限关联 |
 | 6 | `employee` | 商家员工账户 |
-| 7 | `dish_category` | 菜品分类 |
-| 8 | `dish` | 菜品主数据 |
-| 9 | `cart_item` | 用户购物车项 |
-| 10 | `orders` | 订单主表 |
-| 11 | `order_item` | 订单明细表 |
-| 12 | `payment_record` | 支付记录表 |
-| 13 | `operation_log` | 操作审计日志表（预留） |
+| 7 | `rider` | 骑手账户与在线状态 |
+| 8 | `dish_category` | 菜品分类 |
+| 9 | `dish` | 菜品主数据 |
+| 10 | `cart_item` | 用户购物车项 |
+| 11 | `orders` | 订单主表（含 `rider_id` 及骑手时间节点字段） |
+| 12 | `order_item` | 订单明细表 |
+| 13 | `payment_record` | 支付记录表 |
+| 14 | `operation_log` | 操作审计日志（关键业务异步写入） |
 
 ### 4.5 本章小结
 
-本章完成了系统从架构到模块再到关键一致性设计的说明，并与当前代码实现保持一致。
+本章完成了系统从架构到模块再到关键一致性设计与数据库 **14 张业务表** 的说明，并与当前代码、`docs/init.sql` 保持一致。
 
 ---
 
@@ -582,15 +645,14 @@ flowchart LR
 
 已具备的测试与验证项：
 
-- JWT 与商家鉴权相关测试（仓库已有）。
-- 新增下单与支付关键方法测试：
-  - `OrderServiceImplTest`
-  - `PaymentServiceImplTest`
+- JWT、商家鉴权与店铺隔离等相关测试（如 `MerchantAuthGuardTest` 等）。
+- 下单与支付核心逻辑单测：`OrderServiceImplTest`、`PaymentServiceImplTest`。
+- **全链路模拟测试**：`OrderFlowIntegrationTest`（以 Mockito 桩代替真实数据库，串联下单 → 支付（含库存扣减）→ 商家履约等主路径及库存不足回滚等分支；类注释与用例名为准）。
 
-  建议继续补充（待补充）：
+建议继续补充（非阻塞）：
 
-- 订单/支付关键接口集成测试。
-- 并发场景测试（库存与状态冲突）。
+- 更多 HTTP 层或端到端自动化场景（若答辩要求展示接口级报告）。
+- **高并发**下库存与订单状态的专项压测与数据归档策略验证。
 
 ### 6.3 测试用例
 
@@ -631,17 +693,16 @@ flowchart LR
 
 ### 6.4 本章小结
 
-当前测试已覆盖近期事务化改动的核心风险点，但距离完整测试体系仍有差距，后续需继续补齐集成测试与性能测试。
+当前测试已覆盖事务边界、幂等与库存条件更新等核心风险点，并已具备订单主链路集成测试；**性能与高并发专项**仍可进一步补足。
 
 ---
 
 ## 附：待补充项清单（不编造）
 
-- 国内外研究现状的文献综述与引用。
-- 测试数据库数据规模（用户/菜品/订单等大致条数）。
-- 性能测试与压力测试数据报告（当前未开展压测）。
-- 库存扣减与并发控制实现后的专项验证。
-- `operation_log` 业务落库后的审计测试结果。
+- 国内外研究现状的文献综述与引用格式规范化（GB/T 7714 等）。
+- 测试或演示库 **数据规模** 说明（用户/店铺/菜品/订单大致条数，可摘自 `docs/init.sql` 演示数据与实测）。
+- **性能与压力测试**报告（当前未开展系统化压测；库存扣减已为条件更新 + 事务，量化结论需压测支撑）。
+- 更高并发场景下订单状态机与骑手抢单（若有）冲突的专项实验（可选）。
 
 ---
 
@@ -655,7 +716,7 @@ flowchart LR
 - 图 4-3 下单与支付时序图
 - 图 4-4 用户登录与鉴权时序图
 - 图 4-5 商家订单处理时序图
-- 图 4-6 数据库 E-R 图（Chen，13 实体）
+- 图 4-6 数据库 E-R 图（Chen，14 实体）
 - 图 5-1 商家端功能流程图
 - 图 5-2 用户端功能流程图
 - 图 5-3 核心功能端到端流程图
@@ -671,8 +732,8 @@ flowchart LR
 
 ### B.1 需求分析章节图文模板
 
-- 图 3-1（整体系统用例图）引用模板：  
-  “如图 3-1 所示，系统包含用户与商家员工两类核心参与者。用户侧关注点在于点餐交易闭环，商家侧关注点在于运营管理与履约处理，两类用例共同构成系统的功能边界。”
+- 图 3-1（商家端用例示意图）引用模板：  
+  “如图 3-1 所示，商家员工通过登录后的工作台完成店铺设置、分类与菜品维护、订单处理与数据统计等用例；各业务用例在权限允许前提下包含员工登录环节，体现了后台运营场景的功能边界。（用户端、骑手端与平台管理端用例见正文 §3.1。）”
 
 - 图 3-2（系统上下文数据流图）引用模板：  
   “如图 3-2 所示，系统处于用户、商家员工与数据存储之间的中枢位置，前后端交互请求最终沉淀到数据库与文件存储，体现了本系统的数据流向与外部交互关系。”
@@ -683,10 +744,10 @@ flowchart LR
 ### B.2 系统设计章节图文模板
 
 - 图 4-1（系统架构图）引用模板：  
-  “如图 4-1 所示，系统采用前后端分离架构，Nginx 作为入口进行反向代理，后端统一处理业务逻辑并访问 MySQL 与上传目录，具备较好的模块解耦性。”
+  “如图 4-1 所示，系统采用前后端分离架构：浏览器经 HTTP 入口访问前端与 `/api`；开发阶段由 Vite 开发服务器代理 API，生产环境可选用 Nginx 等 Web 服务器托管静态资源并反向代理接口。后端统一承载业务逻辑并访问 MySQL 与上传目录，具备较好的模块解耦性。”
 
 - 图 4-2（系统功能模块图）引用模板：  
-  “如图 4-2 所示，系统按业务能力划分为认证、店铺、菜品、购物车、订单、支付等模块，模块之间通过统一 API 协作，降低了后续功能扩展的耦合成本。”
+  “如图 4-2 所示，系统在用户交易域与商家运营域之外，补充骑手履约域与平台管理域，并与公共服务（认证、上传等）共同构成统一 API 下的模块化划分，有利于后续扩展与联调。”
 
 - 图 4-3（下单与支付时序图）引用模板：  
   “如图 4-3 所示，下单与支付两阶段分别定义清晰的写库边界，并在关键步骤设置事务控制，确保核心交易数据的一致性。”
@@ -739,6 +800,11 @@ flowchart LR
 - 终稿使用 Chen 记法：实体（矩形）、属性（椭圆）、联系（菱形）、基数（1:1/1:N/M:N）。
 - 本 Markdown 稿中提供的是“事实关系清单 + 留白位”，用于确保内容不失真。
 - 最终插图必须严格依据 `docs/init.sql`，不得新增代码中不存在的实体与关系。
+
+### C.4 架构图中「HTTP 入口」表述（避免误解）
+
+- **业务代码不绑定 Nginx**：运行期依赖为 Spring Boot、浏览器与 Vue 构建产物；开发联调以 **Vite**（`vite.config.js` 代理）为主。
+- **Nginx** 仅出现在**可选的生产部署**说明与示例配置（如 `frontend/nginx.conf`）中，用于托管 `dist` 与反向代理，可与其它 Web 服务器替换。
 
 ---
 

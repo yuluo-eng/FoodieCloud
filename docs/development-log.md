@@ -2,6 +2,14 @@
 
 ---
 
+# 增量（2026-05）：废弃 Docker 交付形态（文档同步）
+
+**摘要**：移除仓库内 Docker 预案文件：`Dockerfile`（根目录与 `frontend/`）、`docker-compose.yml`、`.dockerignore`、`docs/Docker本地部署-Windows.md`。演示与上线：**开发用 Vite 代理**；生产为 **JAR + MySQL**，前端静态资源可选用 **Nginx 等**（或并入 **JAR**），见 `deploy-guide.md`。
+
+**文档**：`docs/deploy-guide.md`（文首部署形态说明）、`docs/文档索引说明.md`（「已移除」表）、`docs/development-documentation.md`（维护说明）、`README.md`（文档表增加 `deploy-guide.md` 条目）已同步。
+
+---
+
 # 增量（2026-05）：平台代入驻 + 多店数据隔离
 
 **摘要**：管理端增加 `POST /api/admin/shops`、 `POST /api/admin/shops/{shopId}/employees/bootstrap`；`MerchantAuthGuard` 对普通员工强制本店、对 `SUPER_ADMIN` 允许跨店；商家看板 `GET /api/merchant/dashboard/stats` 支持可选 `shopId`；管理后台「商家管理」页提供新建店铺与创建店长表单。

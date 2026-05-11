@@ -82,5 +82,6 @@
 
 ## 7. 维护说明
 
+- **部署形态**：**开发**时前端为 **Vite 开发服务器**（代理 `/api`）；**生产**为 **JAR + MySQL**，前端 **`dist`** 可选用 **Nginx**（或其它 Web 服务器）托管并反代 API，或并入后端静态资源；仓库**不再维护** Docker，细节见 `deploy-guide.md` 文首说明。
 - 需求冻结后：功能变更请同步更新 `checklist.md`、本文件第 3 节及 `testing-guide.md`。
 - 数据库结构变更：更新 `init.sql` 或新增 `patch-*.sql`，并在 `deploy-guide.md` 中注明执行顺序。

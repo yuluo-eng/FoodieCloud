@@ -1,5 +1,9 @@
 # 预发布部署与环境变量规范
 
+> **部署形态说明**：仓库曾包含 Docker / Compose 预案，已废弃并从仓库移除。  
+> **开发阶段**：前端使用 **`npm run dev`（Vite）**，由 `vite.config.js` 将 `/api`、`/uploads` 代理至 Spring Boot，**不需要 Nginx**。  
+> **生产阶段**：后端 **JAR + MySQL**；前端将 **`npm run build`** 得到的 **`dist/`** 交由 **Nginx**（或其它 Web 服务器/IIS 等）托管并反向代理 `/api`，或将静态资源并入后端 **JAR**（见下文「前端」一节）。**Nginx 仅为常见可选方案**，不是运行时必需组件。
+
 ## 1. 系统要求
 
 | 组件 | 最低版本 |
@@ -108,9 +112,10 @@ npm run build       # 输出到 dist/
 # 方式一：将 dist/ 放到后端 static 资源目录
 cp -r dist/* ../src/main/resources/static/
 
-# 方式二：使用 Nginx 反向代理
+# 方式二（可选用）：使用 Nginx 等反向代理 + 托管 dist
 #   location /api { proxy_pass http://127.0.0.1:8080; }
 #   location / { root /path/to/dist; try_files $uri /index.html; }
+# 仓库内 `frontend/nginx.conf` 为示例配置，非开发环境自动加载
 ```
 
 ---
