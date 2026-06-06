@@ -58,6 +58,7 @@ public class OrderServiceImpl implements OrderService {
         if (selected.isEmpty()) {
             throw new BusinessException(400, "购物车为空");
         }
+        validateSelectedCartShopConsistency(selected, shopId);
 
         BigDecimal total = selected.stream()
                 .map(item -> ((BigDecimal) item.get("unitPrice")).multiply(BigDecimal.valueOf((Integer) item.get("quantity"))))
@@ -379,6 +380,25 @@ public class OrderServiceImpl implements OrderService {
         }
         if (!shopId.equals(order.getShopId())) {
             throw new BusinessException(403, "无权操作其他店铺的订单");
+        }
+    }
+
+    private void validateSelectedCartShopConsistency(List<Map<String, Object>> selected, Long shopId) {
+        Long cartShopId = null;
+        for (Map<String, Object> item : selected) {
+            Object shopObj = item.get("shopId");
+            if (shopObj == null) {
+                throw new BusinessException(400, "购物车数据异常");
+            }
+            Long itemShopId = ((Number) shopObj).longValue();
+            if (cartShopId == null) {
+                cartShopId = itemShopId;
+            } else if (!cartShopId.equals(itemShopId)) {
+                throw new BusinessException(400, "购物车中存在不同店铺的菜品，请分开下单");
+            }
+        }
+        if (!shopId.equals(cartShopId)) {
+            throw new BusinessException(400, "购物车菜品与所选店铺不一致");
         }
     }
 

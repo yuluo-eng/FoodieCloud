@@ -69,7 +69,7 @@ class OrderFlowIntegrationTest {
         when(jwtService.parse("user-token")).thenReturn(
                 new JwtService.JwtPrincipal(JwtService.TYPE_USER, USER_ID, "u1", null));
         when(cartMapper.listSelectedCartForOrder(USER_ID)).thenReturn(List.of(
-                Map.of("dishId", 10L, "dishName", "宫保鸡丁", "unitPrice", new BigDecimal("25.00"), "quantity", 2)
+                Map.of("dishId", 10L, "dishName", "宫保鸡丁", "shopId", SHOP_ID, "unitPrice", new BigDecimal("25.00"), "quantity", 2)
         ));
         doAnswer(inv -> {
             Order o = inv.getArgument(0);

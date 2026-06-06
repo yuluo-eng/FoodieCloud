@@ -179,9 +179,9 @@
 
 ### 1) 环境准备
 
-- 服务器：Linux（2C4G 起步）
-- 依赖：JDK 17、MySQL 8、Nginx
-- 域名与 HTTPS：建议使用 Nginx + Let’s Encrypt
+- 服务器：Linux（2C4G 起步）或本机 **Docker Desktop**（见 `docs/Docker本地部署-Windows.md`）
+- 依赖：JDK 17、MySQL 8；生产裸机可选 Nginx（仓库未提供宿主机配置文件）
+- 域名与 HTTPS：生产环境可选用 Nginx + Let’s Encrypt（文档示例，非仓库必选项）
 
 ### 2) 数据库与后端部署
 
@@ -205,8 +205,8 @@ npm install
 npm run build
 ```
 
-2. 将 `frontend/dist` 部署到 Nginx 静态目录
-3. Nginx 反向代理 `/api` 到 Spring Boot 服务
+2. 将 `frontend/dist` 部署到静态目录（或直接使用 `docker compose` 构建的 frontend 镜像，其内已含 Nginx 反代）
+3. 若裸机部署：由 Nginx 反向代理 `/api` 到 Spring Boot（配置需自行编写，见 `deploy-guide.md` 注释示例）
 
 ### 4) 上传文件目录持久化
 
@@ -260,14 +260,31 @@ npm run build
 
 ## 系统架构图（Mermaid）
 
+> **部署说明（与仓库一致）**  
+> - **开发联调**：Vite（5173）代理 `/api`、`/uploads` → Spring Boot（8080），宿主机不单独装 Nginx。  
+> - **Docker**：`docker compose up` 三容器；反代由 **frontend 容器内** Nginx 完成（见 `frontend/nginx.conf`）。  
+> - **裸机 Nginx**：`deploy-guide.md` 仅有示例注释，非毕设已验收路径。
+
 ```mermaid
-flowchart LR
-  U[用户端 Vue] -->|HTTP /api| N[Nginx]
-  M[商家端 Vue] -->|HTTP /api| N
-  N -->|Reverse Proxy| B[Spring Boot API]
-  B --> D[(MySQL)]
-  B --> F[(本地上传目录 uploads)]
-  N --> S[前端静态资源 dist]
+flowchart TB
+  subgraph 表现层
+    direction LR
+    U[用户端 Vue]
+    M[商家端 Vue]
+    R[骑手端 Vue]
+    A[管理后台 Vue]
+  end
+  API["/api · /uploads"]
+  B[Spring Boot :8080]
+  D[(MySQL)]
+  F[(uploads)]
+  U --> API
+  M --> API
+  R --> API
+  A --> API
+  API --> B
+  B --> D
+  B --> F
 ```
 
 ---

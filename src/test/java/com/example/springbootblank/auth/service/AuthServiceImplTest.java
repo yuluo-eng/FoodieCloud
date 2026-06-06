@@ -6,6 +6,7 @@ import com.example.springbootblank.auth.mapper.AuthMapper;
 import com.example.springbootblank.auth.security.JwtService;
 import com.example.springbootblank.common.error.BusinessException;
 import com.example.springbootblank.common.error.UnauthorizedException;
+import com.example.springbootblank.log.service.OpLogService;
 import com.example.springbootblank.rider.entity.Rider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,8 @@ class AuthServiceImplTest {
     private BCryptPasswordEncoder passwordEncoder;
     @Mock
     private JwtService jwtService;
+    @Mock
+    private OpLogService opLogService;
 
     @InjectMocks
     private AuthServiceImpl authService;

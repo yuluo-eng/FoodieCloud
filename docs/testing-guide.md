@@ -4,6 +4,82 @@
 
 ---
 
+## 0. 快速开始（本地联调 + 自动化）
+
+### 0.1 环境准备
+
+| 组件 | 要求 | 说明 |
+|------|------|------|
+| JDK | 17+ | 后端运行 |
+| MySQL | 8.0+ | 库名默认 `yueshihui`（见 `application.properties`） |
+| Node.js | 18+ | 仅前端 dev / build |
+
+**初始化数据库（全新库）：**
+
+```bash
+mysql -u root -p yueshihui < docs/init.sql
+```
+
+**启动服务：**
+
+```bash
+# 终端 1：后端（项目根目录）
+./mvnw spring-boot:run
+
+# 终端 2：前端（frontend 目录）
+cd frontend && npm run dev
+```
+
+浏览器访问：`http://localhost:5173`（Vite 代理 `/api`、`/uploads` → `8080`）。
+
+### 0.2 演示账号（`init.sql` 预置，密码均为 `123456`）
+
+| 角色 | 账号 | 说明 |
+|------|------|------|
+| 顾客 | `testuser` | 用户端 `/user/login` |
+| 商家超管 | `admin` | 商家端 `/merchant/login`，`shop_id=1`，可跨店管理 |
+| 骑手 | `rider01` | 骑手端 `/rider/login` |
+| 平台管理 | `admin` | 管理端 `/admin/login`（`SUPER_ADMIN`） |
+
+**多店演示数据：**
+
+| shop_id | 店名 | 用户端路径 | 说明 |
+|---------|------|------------|------|
+| 1 | 悦食汇总店 | `/user/shop/1` | 最早完整链路验证店 |
+| 2 | 江南小厨 | `/user/shop/2` | 12 道菜，江南定价档 |
+| 3 | 韩味食堂 | `/user/shop/3` | 12 道菜，韩式定价档 |
+
+> 2、3 店默认**无独立店长账号**，商家端演示可用 `admin` 跨店，或通过管理端「代入驻」创建店长后再测隔离。
+
+### 0.3 自动化测试命令
+
+```bash
+# 全量单元 / 集成测试（Mockito，不依赖 MySQL）
+./mvnw test
+
+# 仅订单相关
+./mvnw test -Dtest=OrderServiceImplTest,OrderFlowIntegrationTest
+
+# 前端构建门禁
+cd frontend && npm run build
+```
+
+**当前自动化基线（2026-06）：** 约 35 条用例，覆盖鉴权、下单、支付扣库存、骑手履约、多店下单校验等。发版前 `./mvnw test` 应全部通过。
+
+### 0.4 测试执行记录（本轮）
+
+| 项目 | 内容 |
+|------|------|
+| 执行日期 | _填写_ |
+| 执行人 | _填写_ |
+| 后端版本 / 分支 | _填写_ |
+| `./mvnw test` | ☐ 通过 ☐ 失败（附 surefire 报告路径） |
+| 黑盒冒烟（§2 标 ★） | ☐ 通过 ☐ 部分通过 |
+| 多店专项（§2.6） | ☐ 通过 ☐ 未测 |
+| 阻塞缺陷 | _无 / DEF-YYYYMMDD-n_ |
+
+---
+
 ## 1. 测试目的与范围
 
 | 类型 | 目的 | 主要依据 |
@@ -30,6 +106,7 @@
 | UB-05 | 订单与配送信息 | 订单列表展示状态；配送中展示骑手信息（若有） | 三端联动 |
 | UB-06 | 个人资料与上传 | 资料修改成功；头像上传符合大小与类型限制 | checklist 1.2 |
 | UB-07 | 异常与体验 | 非法路径进 404；断网/超时 Toast 文案正确 | checklist 4、6 |
+| UB-08 ★ | 多店加购 | 在 **shop 2 或 3** 加菜成功，不报「菜品不存在或已下架」 | 多店购物车修复 |
 
 **记录**：执行人、日期、浏览器、通过/失败、截图或备注。
 
@@ -78,6 +155,18 @@
 
 ---
 
+### 2.6 多店铺专项（2026-06 新增）
+
+| 编号 | 场景 | 操作步骤 | 预期 |
+|------|------|----------|------|
+| MS-01 ★ | 2 店完整点餐 | `testuser` 登录 → 进入江南小厨 → 加购 → 结算下单 | 加购成功；订单 `shop_id=2` |
+| MS-02 ★ | 3 店完整点餐 | 同上，进入韩味食堂 | 加购成功；订单 `shop_id=3` |
+| MS-03 ★ | 跨店混选拦截 | 在 1 店加菜后去 2 店再加菜，勾选全部后按 1 店 `shopId` 下单 | 提示「购物车中存在不同店铺的菜品，请分开下单」或「与所选店铺不一致」 |
+| MS-04 | 打烊不可见 | 管理端将 2 店设为打烊 | 用户端列表不展示或店内不可售（依接口实现） |
+| MS-05 | 商家跨店 | 非超管员工尝试操作他店 `shopId` | 403 |
+
+---
+
 ## 3. 白盒测试（后端与代码健壮性）
 
 白盒测试关注**代码路径、边界条件、异常与安全属性**。本项目已有自动化测试为基线，发布前执行 `./mvnw test`。
@@ -86,12 +175,23 @@
 
 | 关注点 | 说明 | 典型位置 |
 |--------|------|-----------|
-| 订单服务 | 商家接单、店铺不匹配、状态机 | `OrderServiceImplTest` |
+| 订单服务 | 下单、商家接单、跨店隔离、**购物车多店校验** | `OrderServiceImplTest` |
 | 支付与库存 | 支付成功扣库存、库存不足异常 | `PaymentServiceImplTest` |
 | 骑手履约与商家自配冲突 | 路由到正确分支与错误码 | `RiderOrderFulfillmentServiceTest` |
 | 商家鉴权 | Token 解析与角色 | `MerchantAuthGuardTest` |
+| 认证 | 用户/骑手注册登录 | `AuthServiceImplTest` |
 
 **健壮性要求**：新增业务分支应同步补充或更新对应测试类；Mock 构造须与当前构造器依赖一致。
+
+**多店相关自动化用例（`OrderServiceImplTest`）：**
+
+| 用例名 | 验证点 |
+|--------|--------|
+| `createOrderShouldInsertOrderItemsAndClearCart` | 同店购物车正常下单 |
+| `createOrderShouldThrowWhenCartContainsMultipleShops` | 勾选含不同 `shopId` 时拒绝 |
+| `createOrderShouldThrowWhenCartShopMismatchRequestShop` | 购物车店与请求 `shopId` 不一致时拒绝 |
+
+**购物车加购（`CartServiceImpl`）：** 通过 `findById` + `listUserDishes(实际shopId)` 校验，不再硬编码 `shopId=1`（暂无独立单测，由 MS-01/02 黑盒 + 下单单测间接覆盖）。
 
 ---
 
@@ -101,7 +201,7 @@
 |--------|-----------|
 | `OrderFlowIntegrationTest` | 无骑手参与的下单→支付→商家全流程；库存不足回滚 |
 
-**说明**：集成测试依赖数据库与 Spring 上下文配置，CI 中需保证环境一致（见 `deploy-guide.md`）。
+**说明**：当前集成测试使用 **Mockito 模拟 Mapper**，不启动 Spring 容器、不连 MySQL；CI / 本地无需数据库即可跑通。若后续补充 `@SpringBootTest`，需配置测试库（见 `deploy-guide.md`）。
 
 ---
 
@@ -110,6 +210,7 @@
 | 项 | 验证方式 |
 |----|-----------|
 | 店铺隔离 | 商家接口传参 `shopId` 与 JWT 解析出的员工 `shopId` 一致；单测与接口测试覆盖跨店 |
+| 多店购物车 | 加购按菜品真实店铺校验；下单校验勾选项同店且与 `shopId` 一致 |
 | 库存并发 | SQL 条件更新 + 事务；`PaymentServiceImplTest` 中断言扣减失败路径 |
 | JWT 与角色 | 管理接口仅 `SUPER_ADMIN`；代码审查 `MerchantAuthGuard` / Controller |
 | 上传 | Controller 中大小与 MIME 校验不可绕过 |
@@ -131,7 +232,9 @@
 | development-documentation / checklist 模块 | 黑盒编号 | 白盒 / 自动化 |
 |---------------------------------------------|----------|----------------|
 | 用户注册登录 | UB-01 | — |
-| 多商家选店 | UB-02 | 订单创建 `shopId` 校验（服务层） |
+| 多商家选店 | UB-02、MS-01/02 | 订单创建 `shopId` 校验（`OrderServiceImplTest`） |
+| 多店加购 | UB-08 | `CartServiceImpl`（黑盒为主） |
+| 跨店混选 | MS-03 | `createOrderShouldThrowWhenCartContainsMultipleShops` |
 | 下单与支付 | UB-04 | `OrderFlowIntegrationTest`、`PaymentServiceImplTest` |
 | 商家订单与配送方式 | MB-04 | `OrderServiceImplTest` |
 | 骑手送达 | RB-02 | 前端交互黑盒为主 |
@@ -146,7 +249,7 @@
 |--------|------|
 | 黑盒 | 填写后的 `checklist.md` 或导出表格；关键缺陷截图 |
 | 白盒 | `./mvnw test` 报告（通过） |
-| 回归摘要 | 在本文 **第 7 节** 主链路/异常用例表中填写「通过」与日期（原独立 `e2e-test-report.md` 已并入） |
+| 回归摘要 | 本文 **§0.4** 与 **§7** 执行记录表 |
 
 ---
 
@@ -172,7 +275,7 @@
 
 | 项目 | 说明 |
 |------|------|
-| 后端 | Spring Boot 3.x + MyBatis + MySQL 8 |
+| 后端 | Spring Boot 4.x + MyBatis + MySQL 8 |
 | 前端 | Vue 3 + Vite |
 | 浏览器 | Chrome / Safari (iOS) |
 | 测试方式 | 手工 + 单元测试 (JUnit 5 + Mockito) |
@@ -212,6 +315,14 @@
 | 2 | 接单 | 订单进入「进行中」 | |
 | 3 | 依次：到店 → 取餐 → 送达（送达需二次确认） | 流程可完成 | |
 
+#### TC-005 多店点餐（江南小厨 / 韩味食堂）
+
+| 步骤 | 操作 | 预期结果 | 通过 |
+|------|------|---------|------|
+| 1 | 登录 `testuser`，进入 `/user/shop/2` | 展示江南小厨菜单 | |
+| 2 | 加购并下单支付 | 全流程成功，订单归属 shop 2 | |
+| 3 | 重复步骤 1–2，`/user/shop/3` | 韩味食堂全流程成功 | |
+
 ### 7.3 异常链路用例
 
 | 编号 | 场景 | 操作 | 预期 |
@@ -222,18 +333,27 @@
 | TC-104 | 上传非法文件 | .exe 或超大图片 | 提示类型或大小错误 |
 | TC-105 | 重复支付 | 对已支付订单再次 mockSuccess | 幂等，不重复扣库存 |
 | TC-106 | 404 | 访问不存在路由 | 前端 404 页 |
+| TC-107 | 跨店混选下单 | 购物车含 1 店与 2 店菜品后提交 | 业务错误，不生成订单 |
+| TC-108 | 错误 shopId 下单 | 仅在 2 店加菜，确认页却带 `shopId=1`（可改 query 模拟） | 「购物车菜品与所选店铺不一致」 |
 
 ### 7.4 单元测试覆盖（摘要）
 
-| 测试类 | 覆盖场景 |
-|--------|-----------|
-| `OrderServiceImplTest` | 下单、商家接单、跨店隔离等 |
-| `PaymentServiceImplTest` | 支付、幂等、扣库存、库存不足 |
-| `RiderOrderFulfillmentServiceTest` | 骑手接单、幂等、冲突、商家骑手互斥 |
-| `OrderFlowIntegrationTest` | 关键链路集成、库存不足回滚 |
-| `MerchantAuthGuardTest` | 商家鉴权 |
-| 其它 | `JwtServiceTest`、`UserAuthGuardTest`、`AuthServiceImplTest` 等 |
+| 测试类 | 用例数（约） | 覆盖场景 |
+|--------|-------------|-----------|
+| `OrderServiceImplTest` | 6 | 下单、空购物车、清车失败、**多店校验**、商家接单、跨店隔离 |
+| `PaymentServiceImplTest` | — | 支付、幂等、扣库存、库存不足 |
+| `RiderOrderFulfillmentServiceTest` | — | 骑手接单、幂等、冲突、商家骑手互斥 |
+| `OrderFlowIntegrationTest` | 2 | 关键链路集成、库存不足回滚 |
+| `MerchantAuthGuardTest` | — | 商家鉴权 |
+| `AuthServiceImplTest` | 5 | 骑手注册/登录 |
+| `JwtServiceTest` / `UserAuthGuardTest` | — | Token 与用户鉴权 |
+| `SpringBootBlankApplicationTests` | 1 | 上下文加载 |
 
 ### 7.5 结论占位
 
-主链路 + 异常链路设计完成后，在此补充本轮回归日期、执行人、阻塞缺陷编号。
+| 轮次 | 日期 | 执行人 | 主链路 TC-001～005 | 异常 TC-101～108 | `./mvnw test` | 备注 |
+|------|------|--------|-------------------|------------------|---------------|------|
+| 第 1 轮 | | | ☐ | ☐ | ☐ | |
+| 第 2 轮 | | | ☐ | ☐ | ☐ | |
+
+阻塞缺陷编号：_无_

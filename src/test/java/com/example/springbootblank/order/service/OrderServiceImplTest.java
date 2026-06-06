@@ -55,8 +55,8 @@ class OrderServiceImplTest {
     void createOrderShouldInsertOrderItemsAndClearCart() {
         when(jwtService.parse("token")).thenReturn(new JwtService.JwtPrincipal(JwtService.TYPE_USER, 1001L, "u1", null));
         when(cartMapper.listSelectedCartForOrder(1001L)).thenReturn(List.of(
-                Map.of("dishId", 10L, "dishName", "A", "unitPrice", new BigDecimal("12.50"), "quantity", 2),
-                Map.of("dishId", 11L, "dishName", "B", "unitPrice", new BigDecimal("5.00"), "quantity", 1)
+                Map.of("dishId", 10L, "dishName", "A", "shopId", 1L, "unitPrice", new BigDecimal("12.50"), "quantity", 2),
+                Map.of("dishId", 11L, "dishName", "B", "shopId", 1L, "unitPrice", new BigDecimal("5.00"), "quantity", 1)
         ));
         doAnswer(invocation -> {
             Order order = invocation.getArgument(0);
@@ -92,7 +92,7 @@ class OrderServiceImplTest {
     void createOrderShouldThrowWhenClearCartAffectedRowsIsZero() {
         when(jwtService.parse("token")).thenReturn(new JwtService.JwtPrincipal(JwtService.TYPE_USER, 1001L, "u1", null));
         when(cartMapper.listSelectedCartForOrder(1001L)).thenReturn(List.of(
-                Map.of("dishId", 10L, "dishName", "A", "unitPrice", new BigDecimal("12.50"), "quantity", 1)
+                Map.of("dishId", 10L, "dishName", "A", "shopId", 1L, "unitPrice", new BigDecimal("12.50"), "quantity", 1)
         ));
         doAnswer(invocation -> {
             Order order = invocation.getArgument(0);
@@ -108,6 +108,37 @@ class OrderServiceImplTest {
         verify(orderMapper).insertOrder(any(Order.class));
         verify(orderMapper).insertOrderItem(any());
         verify(cartMapper).clearSelectedCart(1001L);
+    }
+
+    @Test
+    void createOrderShouldThrowWhenCartContainsMultipleShops() {
+        when(jwtService.parse("token")).thenReturn(new JwtService.JwtPrincipal(JwtService.TYPE_USER, 1001L, "u1", null));
+        when(cartMapper.listSelectedCartForOrder(1001L)).thenReturn(List.of(
+                Map.of("dishId", 10L, "dishName", "A", "shopId", 1L, "unitPrice", new BigDecimal("12.50"), "quantity", 1),
+                Map.of("dishId", 20L, "dishName", "B", "shopId", 2L, "unitPrice", new BigDecimal("5.00"), "quantity", 1)
+        ));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> orderService.createOrder("Bearer token", new OrderCreateRequest(1L, null)));
+
+        assertEquals(400, ex.getCode());
+        assertEquals("购物车中存在不同店铺的菜品，请分开下单", ex.getMessage());
+        verify(orderMapper, never()).insertOrder(any(Order.class));
+    }
+
+    @Test
+    void createOrderShouldThrowWhenCartShopMismatchRequestShop() {
+        when(jwtService.parse("token")).thenReturn(new JwtService.JwtPrincipal(JwtService.TYPE_USER, 1001L, "u1", null));
+        when(cartMapper.listSelectedCartForOrder(1001L)).thenReturn(List.of(
+                Map.of("dishId", 10L, "dishName", "A", "shopId", 2L, "unitPrice", new BigDecimal("12.50"), "quantity", 1)
+        ));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> orderService.createOrder("Bearer token", new OrderCreateRequest(1L, null)));
+
+        assertEquals(400, ex.getCode());
+        assertEquals("购物车菜品与所选店铺不一致", ex.getMessage());
+        verify(orderMapper, never()).insertOrder(any(Order.class));
     }
 
     @Test
